@@ -6,22 +6,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CollectionsTest {
-    private ArrayList<Integer> nums = new ArrayList<Integer>();
+    private ArrayList<Integer> numbers = new ArrayList<Integer>();
     private final int TEST_LENGTH = 10;
 
     @Before
     public void initTests() {
         for (int i = 0; i < TEST_LENGTH; i++) {
-            nums.add(i);
+            numbers.add(i);
         }
     }
 
     @Test
     public void filterTest() throws Exception {
-        List filtered = Collections.filter(nums, new Predicate<Integer>() {
+        List filtered = Collections.filter(numbers, new Predicate<Number>() {
             @Override
-            public Boolean apply(Integer x) {
-                return x % 2 == 0;
+            public Boolean apply(Number x) {
+                return (Integer)x % 2 == 0;
             }
         });
 
@@ -33,29 +33,29 @@ public class CollectionsTest {
 
     @Test
     public void foldlTest() throws Exception {
-        Integer foldlSum = Collections.foldl(new Function2<Integer, Integer, Integer>() {
+        String allNumsFoldl = Collections.foldl(new Function2<String, Integer, String>() {
             @Override
-            public Integer apply(Integer x, Integer y) {
-                return x + y;
+            public String apply(String y, Integer x) {
+                return y.concat(x.toString());
             }
-        }, 0, nums);
+        }, "", numbers);
 
-        Integer sum = 0;
-        for (Integer i: nums) {
-            sum += i;
+        String allNums = "";
+        for (int i = 0; i < TEST_LENGTH; i++) {
+            allNums += String.valueOf(i);
         }
 
-        Assert.assertEquals("Foldl doesn't work correctly.", sum, foldlSum);
+        Assert.assertEquals("Foldl doesn't work correctly.", allNums, allNumsFoldl);
     }
 
     @Test
     public void foldrTest() throws Exception {
-        String allNumsFoldr = Collections.foldr(new Function2<Integer, String, String>() {
+        String allNumsFoldr = Collections.foldr(new Function2<Number, String, String>() {
             @Override
-            public String apply(Integer x, String y) {
+            public String apply(Number x, String y) {
                 return y.concat(x.toString());
             }
-        }, "", nums);
+        }, "", numbers);
 
         String allNums = "";
         for (int i = TEST_LENGTH - 1; i >= 0; i--) {
@@ -67,7 +67,7 @@ public class CollectionsTest {
 
     @Test
     public void mapTest() throws Exception {
-        List<Character> mapped = Collections.map(nums, new Function1<Integer, Character>() {
+        List<Character> mapped = Collections.map(numbers, new Function1<Integer, Character>() {
             @Override
             public Character apply(Integer x) {
                 return (char)((int)'a' + (int)x);
@@ -85,7 +85,7 @@ public class CollectionsTest {
 
     @Test
     public void takeUnlessTest() throws Exception {
-        List<Integer> taken = Collections.takeUnless(nums, new Predicate<Integer>() {
+        List<Integer> taken = Collections.takeUnless(numbers, new Predicate<Integer>() {
             @Override
             public Boolean apply(Integer x) {
                 return x >= TEST_LENGTH / 2;
@@ -103,10 +103,10 @@ public class CollectionsTest {
 
     @Test
     public void takeWhileTest() throws Exception {
-        List<Integer> taken = Collections.takeWhile(nums, new Predicate<Integer>() {
+        List<Integer> taken = Collections.takeWhile(numbers, new Predicate<Number>() {
             @Override
-            public Boolean apply(Integer x) {
-                return x < TEST_LENGTH / 2;
+            public Boolean apply(Number x) {
+                return (Integer)x < TEST_LENGTH / 2;
             }
         });
 

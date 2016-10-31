@@ -1,10 +1,7 @@
-/**
- * Created by Андрей on 12.10.2016.
- */
 public abstract class Predicate <ArgType> extends Function1 <ArgType, Boolean> {
     public abstract Boolean apply(ArgType x) throws Exception;
 
-    public Predicate or(final Predicate <? super ArgType> other) {
+    public Predicate<ArgType> or(final Predicate <? super ArgType> other) {
         return new Predicate<ArgType>() {
             @Override
             public Boolean apply(ArgType x) throws Exception{
@@ -13,7 +10,7 @@ public abstract class Predicate <ArgType> extends Function1 <ArgType, Boolean> {
         };
     }
 
-    public Predicate and(final Predicate <? super ArgType> other) {
+    public Predicate<ArgType> and(final Predicate <? super ArgType> other) {
         return new Predicate<ArgType>() {
             @Override
             public Boolean apply(ArgType x) throws Exception {
@@ -22,7 +19,7 @@ public abstract class Predicate <ArgType> extends Function1 <ArgType, Boolean> {
         };
     }
 
-    public Predicate not() {
+    public Predicate<ArgType> not() {
         return new Predicate<ArgType>() {
             @Override
             public Boolean apply(ArgType x) throws Exception {
@@ -31,14 +28,14 @@ public abstract class Predicate <ArgType> extends Function1 <ArgType, Boolean> {
         };
     }
 
-    public static final Predicate ALWAYS_TRUE = new Predicate() {
+    public static final Predicate<Object> ALWAYS_TRUE = new Predicate<Object>() {
         @Override
         public Boolean apply(Object x) {
             return true;
         }
     };
 
-    public static final Predicate ALWAYS_FALSE = new Predicate() {
+    public static final Predicate<Object> ALWAYS_FALSE = new Predicate<Object>() {
         @Override
         public Boolean apply(Object x) {
             return false;

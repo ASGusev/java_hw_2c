@@ -3,9 +3,6 @@ import org.junit.Test;
 
 import static org.junit.Assert.fail;
 
-/**
- * Created by andy on 25.10.16.
- */
 public class PredicateTest {
     @Test
     public void testConstants() throws Exception {
@@ -58,7 +55,7 @@ public class PredicateTest {
                 Predicate.ALWAYS_FALSE.or(Predicate.ALWAYS_FALSE).apply(null));
 
         try {
-            Predicate.ALWAYS_TRUE.or(new Predicate() {
+            Predicate.ALWAYS_TRUE.or(new Predicate<Object>() {
                 @Override
                 public Boolean apply(Object x) throws Exception {
                     throw new Exception();

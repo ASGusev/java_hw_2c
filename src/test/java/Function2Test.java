@@ -1,43 +1,43 @@
 import org.junit.Assert;
 import org.junit.Test;
+
 public class Function2Test {
-    private Function2 difference = new Function2<Integer, Integer, Integer>() {
+    private Function2<Number, Number, Integer> difference = new Function2<Number, Number, Integer>() {
         @Override
-        public Integer apply(Integer x, Integer y) {
-            return x - y;
+        public Integer apply(Number x, Number y) {
+            return (Integer)x - (Integer)y;
         }
     };
 
-    private Function1 triple = new Function1<Integer, Integer>() {
+    private Function1<Number, Integer> triple = new Function1<Number, Integer>() {
         @Override
-        public Integer apply(Integer x) {
-            return 3 * x;
+        public Integer apply(Number x) {
+            return 3 * (Integer) x;
         }
     };
 
 
     @Test
     public void composeTest() throws Exception {
-        Assert.assertEquals("Compose works incorectlly.", 6,
-                difference.compose(triple).apply(10, 8));
+        Assert.assertEquals("Compose works incorrectly.", (Integer)6,
+                difference.<Integer>compose(triple).apply(10, 8));
     }
 
     @Test
     public void bind1Test() throws Exception {
         Assert.assertEquals("Binding first argument works incorrectly.",
-                3, difference.bind1(10).apply(7));
+                (Integer)3, difference.<Integer>bind1(10).apply(7));
     }
 
     @Test
     public void bind2Test() throws Exception {
-        Assert.assertEquals("Binding second arguement doesn't work corrrectly.",
-                4, difference.bind2(6).apply(10));
+        Assert.assertEquals("Binding second argument doesn't work correctly.",
+                (Integer) 4, difference.<Integer>bind2(6).apply(10));
     }
 
     @Test
     public void carryTest() throws Exception {
         Assert.assertEquals("Carry works incorrectly.",
-                5, ((Function1)difference.carry().apply(10)).apply(5));
-        //Function1<Integer,Integer> tenMinus = difference.carry().apply(10);
+                (Integer)5, difference.carry().apply(10).apply(5));
     }
 }

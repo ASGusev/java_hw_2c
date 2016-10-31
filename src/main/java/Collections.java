@@ -2,13 +2,9 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-/**
- * Created by andy on 24.10.16.
- */
 public class Collections {
-    public static <SourceType, DestType> List < DestType > map
-            (Iterable<SourceType> iterable,
-             Function1<? super SourceType, DestType> function) throws Exception {
+    public static <SourceType, DestType> List < DestType > map (Iterable<SourceType> iterable,
+                                                                Function1<? super SourceType, DestType> function) throws Exception {
         List<DestType> resList = new LinkedList<DestType>();
         for (SourceType curElement: iterable) {
             resList.add(function.apply(curElement));
@@ -31,13 +27,12 @@ public class Collections {
                                         Predicate<? super T> predicate) throws Exception {
         List<T> resList = new LinkedList<T>();
         Iterator<T> it = iterable.iterator();
-        boolean cont = true;
-        while (it.hasNext() && cont) {
+        while (it.hasNext()) {
             T curElem = it.next();
-            cont = predicate.apply(curElem);
-            if (cont) {
-                resList.add(curElem);
+            if (!predicate.apply(curElem)) {
+                break;
             }
+            resList.add(curElem);
         }
         return resList;
     }
@@ -57,15 +52,13 @@ public class Collections {
         return res;
     }
 
-    public static <SourceType, DestType> DestType foldr(
-            Function2<? super SourceType, ?super DestType, DestType> function,
-            DestType init, Iterable<SourceType> iterable) throws Exception {
+    public static <SourceType, DestType> DestType foldr(Function2<? super SourceType, ?super DestType, DestType> function,
+                                                        DestType init, Iterable<SourceType> iterable) throws Exception {
         return foldrImpl(function, init, iterable.iterator());
     }
 
-    private static <SourceType, DestType> DestType foldrImpl(
-            Function2<? super SourceType, ? super DestType, DestType> function,
-            DestType init, Iterator<SourceType> iterator) throws Exception {
+    private static <SourceType, DestType> DestType foldrImpl(Function2<? super SourceType, ? super DestType, DestType> function,
+                                                             DestType init, Iterator<SourceType> iterator) throws Exception {
         if (iterator.hasNext()) {
             SourceType curElem = iterator.next();
             return function.apply(curElem, foldrImpl(function, init, iterator));
