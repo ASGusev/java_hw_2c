@@ -1,13 +1,17 @@
 package sp;
 
+import com.google.common.collect.ImmutableMap;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Collector;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static org.junit.Assert.*;
 
@@ -15,20 +19,26 @@ public class SecondPartTasksTest {
 
     @Test
     public void testFindQuotes() throws IOException {
-        final String[][] FILES_CONTENT =  { { "qwerty", "", "foo", "bar", "foobar" },
-                { "bar", "baz" }, {}};
+        final List <List<String>> FILES_CONTENT = new ArrayList<>();
+        FILES_CONTENT.add(Arrays.asList("qwerty", "", "foo", "bar", "foobar"));
+        FILES_CONTENT.add(Arrays.asList("bar", "baz"));
+        FILES_CONTENT.add(Collections.emptyList());
+
+        final List <String> EXPECTED_ANSWER = new ArrayList<>();
+        EXPECTED_ANSWER.add("foo");
+        EXPECTED_ANSWER.add("foobar");
+
         final ArrayList<String> filesList = new ArrayList<String>();
-        final String[] EXPECTED_ANSWER = { "foo", "foobar" };
 
         for (int i = 1; i <= 3; i++) {
-            String curFileName = "testFindQuotes" + String.valueOf(i) + ".txt";
+            String curFileName = "testFindQuotes" + i + ".txt";
             filesList.add(curFileName);
 
-            Files.write(Paths.get(curFileName), Arrays.asList(FILES_CONTENT[i - 1]));
+            Files.write(Paths.get(curFileName), FILES_CONTENT.get(i - 1));
         }
 
-        Assert.assertArrayEquals("FindQuotes works incorrectly.", EXPECTED_ANSWER,
-                SecondPartTasks.findQuotes(filesList, "foo").toArray());
+        Assert.assertEquals("FindQuotes works incorrectly.", EXPECTED_ANSWER,
+                SecondPartTasks.findQuotes(filesList, "foo"));
 
         for (String file: filesList) {
             Files.delete(Paths.get(file));
@@ -40,53 +50,47 @@ public class SecondPartTasksTest {
         final double EXPECTED = Math.PI / 4;
         final double EPS = 1e-4;
 
-        Assert.assertEquals("The probability of hit is " + String.valueOf(EXPECTED) + ".",
+        Assert.assertEquals("The probability of hit is " + EXPECTED + ".",
                 EXPECTED, SecondPartTasks.piDividedBy4(), EPS);
     }
 
     @Test
     public void testFindPrinter() {
-        final String[] printers = { "p1", "p2", "p3", "p4" };
-        final String[][] works = { {"story", "story"},
-            {"so", "me", "sho", "rt", "sto", "ri", "es"},
-            {"a very-very long story", "and one more"}, {"just tale"} };
+        final Map<String,List<String>> COMPOSITIONS = ImmutableMap.of(
+                "p1", Arrays.asList("story", "story"),
+                "p2", Arrays.asList("so", "me", "sho", "rt", "sto", "ri", "es"),
+                "p3", Arrays.asList("a very-very long story", "and one more"),
+                "p4", Arrays.asList("just tale")
+        );
+
         final String EXPECTED = "p3";
 
-        HashMap<String,List<String>> compositions = new HashMap<>();
-        for (int i = 0; i < printers.length; i++) {
-            compositions.put(printers[i], Arrays.asList(works[i]));
-        }
-
-        Assert.assertEquals(EXPECTED, SecondPartTasks.findPrinter(compositions));
+        Assert.assertEquals(EXPECTED, SecondPartTasks.findPrinter(COMPOSITIONS));
     }
 
     @Test
     public void testCalculateGlobalOrder() {
-        final String[][] shopsProductNames = { { "Rice", "Macaroni", "Bread" },
-                { "Rice", "Macaroni" }, { "Rice" }, {} };
-        final Integer[][] shopsProductAmounts = { {10, 3, 5}, {100, 0}, {1000}, {} };
-        final String[] allProductNames = { "Rice", "Macaroni", "Bread" };
-        final Integer[] allProductsAmounts = { 1110, 3, 5 };
+        final Map<String,Integer> EXPECTED = ImmutableMap.of(
+                "Rice", 1110,
+                "Macaroni", 3,
+                "Bread", 5
+        );
 
-        ArrayList <Map<String,Integer>> orders = new ArrayList<Map<String,Integer>>();
-
-        for (int i = 0; i < shopsProductAmounts.length; i++) {
-            Map<String,Integer> curOrder = new HashMap<String,Integer>();
-            for (int j = 0; j < shopsProductAmounts[i].length; j++) {
-                curOrder.put(shopsProductNames[i][j], shopsProductAmounts[i][j]);
-            }
-            orders.add(curOrder);
-        }
-
-        Map<String,Integer> result = SecondPartTasks.calculateGlobalOrder(orders);
-
-        Assert.assertEquals("The resulting map should contain all mentioned products once.",
-                allProductNames.length, result.size());
-
-        for (int i = 0; i < allProductNames.length; i++) {
-            Assert.assertEquals("The global amount of a product odered should match " +
-                    "summary amount of all orders.", allProductsAmounts[i],
-                    result.get(allProductNames[i]));
-        }
+        List <Map<String,Integer>> orders = new ArrayList<>();
+        orders.add(ImmutableMap.of(
+                "Rice", 10,
+                "Macaroni", 3,
+                "Bread", 5
+        ));
+        orders.add(ImmutableMap.of(
+                "Rice", 100,
+                "Macaroni", 0
+        ));
+        orders.add(ImmutableMap.of(
+                "Rice", 1000
+        ));
+        
+        Assert.assertEquals("Calculate global order works incorrectly.", EXPECTED,
+                SecondPartTasks.calculateGlobalOrder(orders));
     }
 }
