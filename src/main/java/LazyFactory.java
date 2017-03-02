@@ -43,14 +43,16 @@ public abstract class LazyFactory {
 
             @Override
             public T get() {
-                if (result == EMPTY) {
+                T res = result;
+                if (res == EMPTY) {
                     synchronized (this) {
-                        if (result == EMPTY) {
-                            result = supplier.get();
+                        res = result;
+                        if (res == EMPTY) {
+                            result = res = supplier.get();
                         }
                     }
                 }
-                return null;
+                return res;
             }
         };
     }
