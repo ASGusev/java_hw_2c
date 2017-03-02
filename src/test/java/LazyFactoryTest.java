@@ -1,7 +1,14 @@
 import org.junit.Assert;
 import org.junit.Test;
 
+/**
+ * A class for testing Lazy implementations created by LazyFactory.
+ */
+
 public class LazyFactoryTest {
+    /**
+     * A test to check that the single-thread implementation returns the required value.
+     */
     @Test
     public void singleThreadSimpleTest() {
         final Integer ret = 42;
@@ -9,12 +16,18 @@ public class LazyFactoryTest {
         Assert.assertEquals(ret, lazy.get());
     }
 
+    /**
+     * A test that checks if any calls to single-thread Lazy return different objects.
+     */
     @Test
     public void singleThreadCoincidenceTest() {
         Lazy lazy = LazyFactory.createLazySingleThread(Object::new);
         Assert.assertTrue(lazy.get() == lazy.get());
     }
 
+    /**
+     * A test that checks if single-thread Lazy calls supplier more than once.
+     */
     @Test
     public void singleThreadAppealTest() {
         AppealCounter counter = new AppealCounter();
@@ -25,6 +38,9 @@ public class LazyFactoryTest {
         Assert.assertEquals(1, counter.getCount());
     }
 
+    /**
+     * A test that checks if multi-thread Lazy calls supplier more than once.
+     */
     @Test
     public void multiThreadAppealTest() {
         AppealCounter counter = new AppealCounter();
@@ -48,6 +64,10 @@ public class LazyFactoryTest {
         Assert.assertEquals(1, counter.getCount());
     }
 
+    /**
+     * A test that checks if the lock-free implementation returns
+     * different objects after different calls.
+     */
     @Test
     public void multiThreadLockFreeCoincidenceTest() {
         final int THREADS_NUMBER = 5;
