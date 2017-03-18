@@ -31,7 +31,8 @@ public class Main {
                             } catch (VCS.BadRepoException e) {
                                 System.out.println("Incorrect repo.");
                             } catch (VCS.NonExistentFileException e) {
-                                System.out.println("File " + args[i] + " cannot be found.");
+                                System.out.println("File " + args[i] + " " +
+                                        "cannot be found.");
                             }
                         }
                     }
@@ -100,15 +101,51 @@ public class Main {
                 case "log": {
                     try {
                         List<VCS.Commit> commits = VCS.Branch.getLog(VCS.getCurBranch());
-                        System.out.printf("%4s%12s %12s%8s %s\n", "ID", "Author", "Date", "Time", "Message");
+                        System.out.printf("%4s%12s %12s%8s %s\n", "ID", "Author",
+                                "Date", "Time", "Message");
                         commits.forEach(commit ->
-                            System.out.printf("%4d%12s  %3$tF %3$tT %4$s\n", commit.getNumber(),
-                                    commit.getAuthor(), commit.getTime(), commit.getMessage())
+                            System.out.printf("%4d%12s  %3$tF %3$tT %4$s\n",
+                                    commit.getNumber(), commit.getAuthor(),
+                                    commit.getTime(), commit.getMessage())
                         );
                     } catch (VCS.FileSystemError e) {
                         System.out.println("Filesystem error");
                     } catch (VCS.BadRepoException | VCS.NonExistentBranchException e) {
                         System.out.println("Incorrect repo");
+                    }
+                    break;
+                }
+                case "checkout": {
+                    if (args.length == 3) {
+                        switch (args[1]) {
+                            case "branch": {
+                                try {
+                                    VCS.checkoutBranch(args[2]);
+                                } catch (VCS.BadRepoException e) {
+                                    System.out.println("Incorrect repo");
+                                } catch (VCS.NonExistentBranchException e) {
+                                    System.out.println("A branch called " +
+                                            args[2] + " does not exist.");
+                                }
+                                break;
+                            }
+                            case "commit": {
+                                try {
+                                    VCS.checkoutCommit(Integer.valueOf(args[2]));
+                                } catch (VCS.BadRepoException e) {
+                                    System.out.println("Incorrect repo");
+                                } catch (VCS.NoSuchCommitException e) {
+                                    System.out.println("A commit with number " +
+                                            args[2] + " does not exist.");
+                                }
+                                break;
+                            }
+                            default: {
+                                showHelp();
+                            }
+                        }
+                    } else {
+                        showHelp();
                     }
                     break;
                 }

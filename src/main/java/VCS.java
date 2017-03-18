@@ -316,6 +316,22 @@ public class VCS {
         return curBranch;
     }
 
+    public static int getCurCommit() throws BadRepoException {
+        int curCommit;
+        Path posFilePath = Paths.get(REPO_DIR_NAME, POSITION_FILENAME);
+        if (Files.notExists(posFilePath)) {
+            throw new BadRepoException();
+        }
+
+        try (Scanner scanner = new Scanner(posFilePath)) {
+            scanner.next();
+            curCommit = scanner.nextInt();
+        } catch (IOException e) {
+            throw new FileSystemError();
+        }
+        return curCommit;
+    }
+
     public static class Commit {
         private int number;
         private String branch;
@@ -351,6 +367,63 @@ public class VCS {
 
         public Calendar getTime() {
             return time;
+        }
+    }
+
+    public static void checkoutCommit(int commitID) throws BadRepoException,
+            NoSuchCommitException {
+        int curCommit = getCurCommit();
+        Path curCommitList = Paths.get(REPO_DIR_NAME, COMMIT_METADATA_FILE,
+                String.valueOf(curCommit), COMMIT_FILES_LIST);
+        try {
+            Files.readAllLines(curCommitList).forEach(line -> {
+                Path path = Paths.get(line.substring(0, line.indexOf(' ')));
+                try {
+                    if (Files.isDirectory(path)) {
+                        deleteDir(path);
+                    } else {
+                        Files.delete(path);
+                    }
+                } catch (IOException e) {
+                    throw new FileSystemError();
+                }
+            });
+        } catch (IOException e) {
+            throw new FileSystemError();
+        }
+
+        Path newContent = Paths.get(REPO_DIR_NAME, COMMITS_DIR_NAME,
+                String.valueOf(commitID), COMMIT_CONTENT_DIR);
+        try {
+            Files.walk(newContent).forEach(path -> {
+                Path relativePath = newContent.relativize(path);
+                try {
+                    Files.copy(path, relativePath);
+                } catch (IOException e) {
+                    throw new FileSystemError();
+                }
+            });
+        } catch (IOException e) {
+            throw new FileSystemError();
+        }
+
+        Path posFilePath = Paths.get(REPO_DIR_NAME, POSITION_FILENAME);
+        try {
+            String branch = getCommitBranch(commitID);
+            Files.write(posFilePath, (branch + '\n' + String.valueOf(commitID))
+                    .getBytes());
+        } catch (IOException e) {
+            throw new FileSystemError();
+        }
+    }
+
+    public static void checkoutBranch(String branchName) throws BadRepoException,
+            NonExistentBranchException {
+        int branchHead = getBranchHead(branchName);
+        try {
+            checkoutCommit(branchHead);
+        } catch (NoSuchCommitException e) {
+            throw new BadRepoException();
         }
     }
 
@@ -412,6 +485,38 @@ public class VCS {
         return new BigInteger(1, hash).toString();
     }
 
+    private static int getBranchHead(String branchName) throws BadRepoException,
+            NonExistentBranchException {
+        Path branchPath = Paths.get(REPO_DIR_NAME, BRANCHES_DIR_NAME, branchName);
+        if (Files.notExists(Paths.get(REPO_DIR_NAME, BRANCHES_DIR_NAME))) {
+            throw new BadRepoException();
+        }
+        if (Files.notExists(branchPath)) {
+            throw new NonExistentBranchException();
+        }
+
+        String number = null;
+        try (Scanner scanner = new Scanner(branchPath)) {
+            while (scanner.hasNext()) {
+                number = scanner.next();
+            }
+        } catch (IOException e) {
+            throw new FileSystemError();
+        }
+        return Integer.valueOf(number);
+    }
+
+    private static String getCommitBranch(int commit) throws IOException {
+        String branch;
+        Path metadataPath = Paths.get(REPO_DIR_NAME, COMMITS_COUNTER_FILENAME,
+                String.valueOf(commit), COMMIT_CONTENT_DIR);
+        Scanner scanner = new Scanner(metadataPath);
+        scanner.next();
+        branch = scanner.next();
+        scanner.close();
+        return branch;
+    }
+
     public static class AlreadyExistsException extends Exception {}
 
     public static class BadRepoException extends Exception{}
@@ -421,4 +526,6 @@ public class VCS {
     public static class NonExistentFileException extends Exception{}
 
     public static class NonExistentBranchException extends Exception{}
+
+    public static class NoSuchCommitException extends Exception{}
 }
