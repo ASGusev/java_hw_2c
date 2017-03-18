@@ -1,5 +1,3 @@
-import com.sun.org.apache.regexp.internal.RE;
-
 import java.io.*;
 import java.math.BigInteger;
 import java.nio.file.*;
@@ -25,9 +23,9 @@ public class VCS {
     private static final String COMMIT_METADATA_FILE = "metadata";
     private static final String COMMIT_FILES_LIST = "files_list";
 
-    public static void createRepo(String author) throws RepoExistsException, IOException {
+    public static void createRepo(String author) throws AlreadyExistsException, IOException {
         if (Files.exists(Paths.get(REPO_DIR_NAME), LinkOption.NOFOLLOW_LINKS)) {
-            throw new RepoExistsException();
+            throw new AlreadyExistsException();
         }
 
         Files.createDirectory(Paths.get(REPO_DIR_NAME));
@@ -173,7 +171,7 @@ public class VCS {
         wipeDir(stageDirPath);
     }
 
-    public static void addFile(String path) throws BadRepoException, UnrecognisedFileException {
+    public static void addFile(String path) throws BadRepoException, NonExistentFileException {
         if (Files.exists(Paths.get(path))) {
             Path stageDirPath = Paths.get(REPO_DIR_NAME, STAGE_DIR);
             if (Files.notExists(stageDirPath)) {
@@ -186,7 +184,77 @@ public class VCS {
                 throw new FileSystemError();
             }
         } else {
-            throw new UnrecognisedFileException();
+            throw new NonExistentFileException();
+        }
+    }
+
+    public static class Branch {
+        public static void createBranch(String branchName) throws BadRepoException,
+                AlreadyExistsException {
+            Path posFile = Paths.get(REPO_DIR_NAME, POSITION_FILENAME);
+            if (Files.notExists(Paths.get(REPO_DIR_NAME, BRANCHES_DIR_NAME)) ||
+                    Files.notExists(posFile)) {
+                throw new BadRepoException();
+            }
+            Path branchDescription = Paths.get(REPO_DIR_NAME, BRANCHES_DIR_NAME, branchName);
+            if (Files.exists(branchDescription)) {
+                throw new AlreadyExistsException();
+            }
+            try {
+                Files.createFile(branchDescription);
+                List<String> pos = Files.readAllLines(posFile);
+                Files.write(posFile, (branchName + '\n' + pos.get(1)).getBytes());
+            } catch (IOException e) {
+                throw new FileSystemError();
+            }
+        }
+
+        public static void deleteBranch(String branchName) throws BadRepoException,
+                NonExistentBranchException {
+            if (branchName.equals("master")) {
+                throw new IllegalArgumentException();
+            }
+            Path branchDescription = Paths.get(REPO_DIR_NAME, BRANCHES_DIR_NAME,
+                    branchName);
+            Path posFile = Paths.get(REPO_DIR_NAME, POSITION_FILENAME);
+            if (Files.notExists(Paths.get(REPO_DIR_NAME, BRANCHES_DIR_NAME)) ||
+                    Files.notExists(posFile)) {
+                throw new BadRepoException();
+            }
+            if (Files.notExists(branchDescription)) {
+                throw new NonExistentBranchException();
+            }
+
+            try {
+                Path commitsDir = Paths.get(REPO_DIR_NAME, COMMITS_DIR_NAME);
+                Files.lines(branchDescription).forEach(commit -> {
+                    try {
+                        deleteDir(commitsDir.resolve(commit));
+                    } catch (IOException e) {
+                        throw new FileSystemError();
+                    }
+                });
+                Scanner posScanner = new Scanner(posFile);
+                String curBranch = posScanner.next();
+                posScanner.close();
+                if (curBranch.equals(branchName)) {
+                    String newPos = "0";
+                    Scanner branchScanner = new Scanner(Paths.get(REPO_DIR_NAME,
+                            BRANCHES_DIR_NAME, "master"));
+                    while (branchScanner.hasNext()) {
+                        newPos = branchScanner.nextLine();
+                    }
+
+                    FileWriter posWriter = new FileWriter(posFile.toString());
+                    posWriter.write("master" + '\n');
+                    posWriter.write(newPos);
+                    posWriter.close();
+                }
+
+                Files.delete(branchDescription);
+            } catch (IOException e) {
+                throw new FileSystemError();
+            }
         }
     }
 
@@ -248,11 +316,13 @@ public class VCS {
         return new BigInteger(1, hash).toString();
     }
 
-    public static class RepoExistsException extends Exception {};
+    public static class AlreadyExistsException extends Exception {}
 
-    public static class BadRepoException extends Exception{};
+    public static class BadRepoException extends Exception{}
 
-    public static class FileSystemError extends Error{};
+    public static class FileSystemError extends Error{}
 
-    public static class UnrecognisedFileException extends Exception{};
+    public static class NonExistentFileException extends Exception{}
+
+    public static class NonExistentBranchException extends Exception{}
 }
