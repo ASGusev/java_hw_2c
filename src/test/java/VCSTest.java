@@ -43,7 +43,7 @@ public class VCSTest {
                     Files.readAllLines(Paths.get(REPO_DIR_NAME, POSITION_FILENAME)),
                     Arrays.asList("", "0"));
         } finally {
-            VCS.removeRepo();
+            deleteDir(REPO_DIR_NAME);
         }
     }
 
@@ -58,13 +58,39 @@ public class VCSTest {
             Assert.assertEquals(Files.readAllLines(Paths.get(REPO_DIR_NAME, USERNAME_FILE)),
                     Collections.singletonList(USERNAME_2));
         } finally {
-            VCS.removeRepo();
+            deleteDir(REPO_DIR_NAME);
         }
     }
-    /*
+
     @Test
     public void commitTest() throws IOException, VCS.RepoExistsException,
             VCS.BadRepoException {
+        final String USERNAME = "user";
+        VCS.createRepo(USERNAME);
+        Files.write(Paths.get("foo"), "foo".getBytes());
+
     }
-    */
+
+    private static void deleteDir(String dir) throws IOException {
+        Path dirPath = Paths.get(dir);
+        wipeDir(dirPath);
+        Files.delete(dirPath);
+    }
+
+    private static void wipeDir(Path dir) throws IOException {
+        Stream<Path> content = Files.list(dir);
+        content.forEach(path -> {
+            try {
+                if (Files.isDirectory(path)) {
+                    wipeDir(path);
+                    Files.delete(path);
+                } else {
+                    Files.delete(path);
+                }
+            } catch (IOException e) {
+                throw new VCS.FileSystemError();
+            }
+        });
+        content.close();
+    }
 }
