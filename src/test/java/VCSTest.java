@@ -1,15 +1,10 @@
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.stream.Stream;
@@ -23,7 +18,7 @@ public class VCSTest {
     private static final String POSITION_FILENAME = "position";
 
     @Test
-    public void createRepoTest() throws IOException, VCS.RepoExistsException {
+    public void createRepoTest() throws IOException, VCS.AlreadyExistsException {
         final String USERNAME = "user";
         try {
             VCS.createRepo(USERNAME);
@@ -39,9 +34,8 @@ public class VCSTest {
                     Files.readAllLines(Paths.get(REPO_DIR_NAME, COMMITS_COUNTER_FILENAME)),
                     Collections.singletonList("0"));
 
-            Assert.assertEquals(
-                    Files.readAllLines(Paths.get(REPO_DIR_NAME, POSITION_FILENAME)),
-                    Arrays.asList("", "0"));
+            Assert.assertEquals(Arrays.asList("master", "0"),
+                    Files.readAllLines(Paths.get(REPO_DIR_NAME, POSITION_FILENAME)));
         } finally {
             deleteDir(REPO_DIR_NAME);
         }
@@ -49,7 +43,7 @@ public class VCSTest {
 
     @Test
     public void setUserTest() throws
-            IOException, VCS.RepoExistsException, VCS.BadRepoException {
+            IOException, VCS.AlreadyExistsException, VCS.BadRepoException {
         try {
             final String USERNAME_1 = "user1";
             final String USERNAME_2 = "user2";
@@ -63,12 +57,15 @@ public class VCSTest {
     }
 
     @Test
-    public void commitTest() throws IOException, VCS.RepoExistsException,
+    public void commitTest() throws IOException, VCS.AlreadyExistsException,
             VCS.BadRepoException {
         final String USERNAME = "user";
         VCS.createRepo(USERNAME);
-        Files.write(Paths.get("foo"), "foo".getBytes());
-
+        try {
+            Files.write(Paths.get("foo"), "foo".getBytes());
+        } finally {
+            deleteDir(REPO_DIR_NAME);
+        }
     }
 
     private static void deleteDir(String dir) throws IOException {
