@@ -1,4 +1,5 @@
 import java.io.IOException;
+import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
@@ -96,6 +97,21 @@ public class Main {
                     }
                     break;
                 }
+                case "log": {
+                    try {
+                        List<VCS.Commit> commits = VCS.Branch.getLog(VCS.getCurBranch());
+                        System.out.printf("%4s%12s %12s%8s %s\n", "ID", "Author", "Date", "Time", "Message");
+                        commits.forEach(commit ->
+                            System.out.printf("%4d%12s  %3$tF %3$tT %4$s\n", commit.getNumber(),
+                                    commit.getAuthor(), commit.getTime(), commit.getMessage())
+                        );
+                    } catch (VCS.FileSystemError e) {
+                        System.out.println("Filesystem error");
+                    } catch (VCS.BadRepoException | VCS.NonExistentBranchException e) {
+                        System.out.println("Incorrect repo");
+                    }
+                    break;
+                }
 
                 default: {
                     showHelp();
@@ -105,6 +121,7 @@ public class Main {
     }
 
     private static void showHelp() {
+        //TODO: help
         System.out.println("help)");
     }
 }

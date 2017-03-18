@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class VCS {
@@ -44,9 +45,10 @@ public class VCS {
         BufferedWriter metadataWriter = new BufferedWriter(new FileWriter(
                 Paths.get(REPO_DIR_NAME, COMMITS_DIR_NAME,
                         "0", COMMIT_METADATA_FILE).toString()));
-        metadataWriter.write(LocalDateTime.now().
-                format(DateTimeFormatter.ofLocalizedDateTime(
-                        FormatStyle.SHORT, FormatStyle.MEDIUM)));
+        //metadataWriter.write(LocalDateTime.now().
+        //        format(DateTimeFormatter.ofLocalizedDateTime(
+        //                FormatStyle.SHORT, FormatStyle.MEDIUM)));
+        metadataWriter.write(String.valueOf(System.currentTimeMillis()));
         metadataWriter.write(author);
         metadataWriter.write("Initial commit");
         metadataWriter.close();
@@ -103,9 +105,10 @@ public class VCS {
         BufferedWriter metadataWriter = new BufferedWriter(new FileWriter(
                 Paths.get(REPO_DIR_NAME, COMMITS_DIR_NAME,
                         number.toString(), COMMIT_METADATA_FILE).toString()));
-        metadataWriter.write(LocalDateTime.now().
-                format(DateTimeFormatter.ofLocalizedDateTime(
-                        FormatStyle.SHORT, FormatStyle.MEDIUM)) + '\n');
+        //metadataWriter.write(LocalDateTime.now().
+        //        format(DateTimeFormatter.ofLocalizedDateTime(
+        //                FormatStyle.SHORT, FormatStyle.MEDIUM)) + '\n');
+        metadataWriter.write(String.valueOf(System.currentTimeMillis()) + '\n');
         metadataWriter.write(branch + '\n');
         metadataWriter.write(getUserName() + '\n');
         metadataWriter.write(message);
@@ -255,6 +258,99 @@ public class VCS {
             } catch (IOException e) {
                 throw new FileSystemError();
             }
+        }
+
+        public static List<Commit> getLog(String branchName) throws BadRepoException,
+                NonExistentBranchException {
+            if (Files.notExists(Paths.get(REPO_DIR_NAME, BRANCHES_DIR_NAME))) {
+                throw new BadRepoException();
+            }
+            Path branchDescriptionPath = Paths.get(REPO_DIR_NAME, BRANCHES_DIR_NAME,
+                    branchName);
+            if (Files.notExists(branchDescriptionPath)) {
+                throw new NonExistentBranchException();
+            }
+
+            Path commitsDir = Paths.get(REPO_DIR_NAME, COMMITS_DIR_NAME);
+            List<Commit> commitList;
+            try {
+                commitList = Files.lines(branchDescriptionPath).map(number -> {
+                    Path commitDescription = commitsDir.resolve(number).
+                            resolve(COMMIT_METADATA_FILE);
+                    Commit commit;
+                    try (Scanner commitScanner = new Scanner(commitDescription)) {
+                        long time = commitScanner.nextLong();
+                        String branch = commitScanner.next();
+                        String author = commitScanner.next();
+                        StringBuilder messageBuilder = new StringBuilder();
+                        while (commitScanner.hasNext()) {
+                            messageBuilder.append(commitScanner.nextLine());
+                        }
+                        String message = messageBuilder.toString();
+                        commit = new Commit(Integer.valueOf(number), branch, author,
+                                message, time);
+                    } catch (IOException e) {
+                        throw new FileSystemError();
+                    }
+                    return commit;
+                }).collect(Collectors.toList());
+            } catch (IOException e) {
+                throw new FileSystemError();
+            }
+            return commitList;
+        }
+    }
+
+    public static String getCurBranch() throws BadRepoException {
+        String curBranch;
+        Path posFilePath = Paths.get(REPO_DIR_NAME, POSITION_FILENAME);
+        if (Files.notExists(posFilePath)) {
+            throw new BadRepoException();
+        }
+
+        try (Scanner scanner = new Scanner(posFilePath)) {
+            curBranch = scanner.next();
+        } catch (IOException e) {
+            throw new FileSystemError();
+        }
+        return curBranch;
+    }
+
+    public static class Commit {
+        private int number;
+        private String branch;
+        private String author;
+        private String message;
+        private Calendar time;
+
+        Commit(int number, String branch, String author, String message, long moment) {
+            this.number = number;
+            this.branch = branch;
+            this.author = author;
+            this.message = message;
+            Calendar.Builder builder = new Calendar.Builder();
+            builder.setInstant(moment);
+            time = builder.build();
+        }
+
+        public int getNumber() {
+            return number;
+        }
+
+        public String getBranch() {
+            return branch;
+        }
+
+        public String getAuthor() {
+            return author;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public Calendar getTime() {
+            return time;
         }
     }
 
