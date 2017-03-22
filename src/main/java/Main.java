@@ -9,7 +9,7 @@ public class Main {
             switch (args[0]) {
                 case "init": {
                     if (args.length == 1) {
-                        System.out.println("Username required to initialise repo.");
+                        showHelp();
                     } else {
                         try {
                             VCS.createRepo(args[1]);
@@ -23,14 +23,14 @@ public class Main {
                 }
                 case "add": {
                     if (args.length == 1) {
-                        System.out.println("Specify files to add.");
+                        showHelp();
                     } else {
                         for (int i = 1; i < args.length; i++) {
                             try {
                                 VCS.addFile(args[i]);
                             } catch (VCS.BadRepoException e) {
                                 System.out.println("Incorrect repo.");
-                            } catch (VCS.NonExistentFileException e) {
+                            } catch (VCS.NoSuchFileException e) {
                                 System.out.println("File " + args[i] + " " +
                                         "cannot be found.");
                             }
@@ -44,20 +44,17 @@ public class Main {
                     } else {
                         try {
                             VCS.commit(args[1]);
-                        } catch (IOException e) {
-                            System.out.println("Filesystem error");
-                            e.printStackTrace();
                         } catch (VCS.BadRepoException e) {
                             System.out.println("Incorrect repo");
+                        } catch (VCS.BadPositionException e) {
+                            System.out.println("You must be in the head of a " +
+                                    "branch to commit.");
                         }
                     }
                     break;
                 }
                 case "branch": {
-                    if (args.length == 1) {
-                        System.out.println("Branches:");
-                        //TODO: list branches
-                    } else if (args.length == 3) {
+                    if (args.length == 3) {
                         switch (args[1]) {
                             case "create": {
                                 try {
@@ -82,7 +79,7 @@ public class Main {
                                         System.out.println("Filesystem error");
                                     } catch (VCS.BadRepoException e) {
                                         System.out.println("Incorrect repo");
-                                    } catch (VCS.NonExistentBranchException e) {
+                                    } catch (VCS.NoSuchBranchException e) {
                                         System.out.println("A branch called " +
                                                 args[2] + " does not exist.");
                                     }
@@ -110,7 +107,7 @@ public class Main {
                         );
                     } catch (VCS.FileSystemError e) {
                         System.out.println("Filesystem error");
-                    } catch (VCS.BadRepoException | VCS.NonExistentBranchException e) {
+                    } catch (VCS.BadRepoException | VCS.NoSuchBranchException e) {
                         System.out.println("Incorrect repo");
                     }
                     break;
@@ -123,7 +120,7 @@ public class Main {
                                     VCS.checkoutBranch(args[2]);
                                 } catch (VCS.BadRepoException e) {
                                     System.out.println("Incorrect repo");
-                                } catch (VCS.NonExistentBranchException e) {
+                                } catch (VCS.NoSuchBranchException e) {
                                     System.out.println("A branch called " +
                                             args[2] + " does not exist.");
                                 }
@@ -150,6 +147,24 @@ public class Main {
                     break;
                 }
 
+                case "merge": {
+                    if (args.length < 2) {
+                        System.out.println("Specify a branch too merge.");
+                    } else {
+                        try {
+                            VCS.merge(args[1]);
+                        } catch (VCS.NoSuchBranchException e) {
+                            System.out.println("Branch " + args[1] + " does not exist.");
+                        } catch (VCS.BadRepoException e) {
+                            System.out.println("Incorrect repo.");
+                        } catch (VCS.BadPositionException e) {
+                            System.out.println("You must be in the head of a branch " +
+                                    "to merge another one into it.");
+                        }
+                    }
+                    break;
+                }
+
                 default: {
                     showHelp();
                 }
@@ -158,7 +173,16 @@ public class Main {
     }
 
     private static void showHelp() {
-        //TODO: help
-        System.out.println("help)");
+        System.out.println("Commands include:\n" +
+        "init <username> - initialises repo with the given username\n" +
+        "add <file> - adds the file to the next commit\n" +
+        "commit <message> - commits changes\n" +
+        "branch create <name> - creates a branch with provided name\n" +
+        "branch delete <name> - deletes specified branch\n" +
+        "log - shows commit history in current branch\n" +
+        "checkout commit <number> - returns the repo to the state of the " +
+                "specified commit\n" +
+        "checkout branch <name> - checks out the head of the given branch\n" +
+        "merge <branch name> - merges the givrn branch into current");
     }
 }

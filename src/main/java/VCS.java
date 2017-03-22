@@ -4,9 +4,6 @@ import java.nio.file.*;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -18,7 +15,6 @@ public class VCS {
     private static final String USERNAME_FILE = "user";
     private static final String COMMITS_COUNTER_FILENAME = "commit";
     private static final String POSITION_FILENAME = "position";
-    private static final String STAGE_LIST = "stage_list";
     private static final String STAGE_DIR = "stage";
     private static final String COMMIT_CONTENT_DIR = "content";
     private static final String COMMIT_METADATA_FILE = "metadata";
@@ -45,12 +41,10 @@ public class VCS {
         BufferedWriter metadataWriter = new BufferedWriter(new FileWriter(
                 Paths.get(REPO_DIR_NAME, COMMITS_DIR_NAME,
                         "0", COMMIT_METADATA_FILE).toString()));
-        //metadataWriter.write(LocalDateTime.now().
-        //        format(DateTimeFormatter.ofLocalizedDateTime(
-        //                FormatStyle.SHORT, FormatStyle.MEDIUM)));
-        metadataWriter.write(String.valueOf(System.currentTimeMillis()));
-        metadataWriter.write(author);
-        metadataWriter.write("Initial commit");
+        metadataWriter.write(String.valueOf(System.currentTimeMillis()) + '\n');
+        metadataWriter.write(author + '\n');
+        metadataWriter.write("0\n");
+        metadataWriter.write("Initial commit\n");
         metadataWriter.close();
         Files.createFile(Paths.get(REPO_DIR_NAME, COMMITS_DIR_NAME, "0",
                 COMMIT_FILES_LIST));
@@ -58,20 +52,20 @@ public class VCS {
                 COMMIT_CONTENT_DIR));
 
         //Setting username
-        FileWriter authorWriter = new FileWriter(REPO_DIR_NAME +
-                '/' + USERNAME_FILE);
+        FileWriter authorWriter = new FileWriter(
+                Paths.get(REPO_DIR_NAME, USERNAME_FILE).toString());
         authorWriter.write(author);
         authorWriter.close();
 
         //Setting up commit counter
-        FileWriter commitsWriter = new FileWriter(REPO_DIR_NAME +
-                '/' + COMMITS_COUNTER_FILENAME);
+        FileWriter commitsWriter = new FileWriter(
+                Paths.get(REPO_DIR_NAME, COMMITS_COUNTER_FILENAME).toString());
         commitsWriter.write("0");
         commitsWriter.close();
 
         //Setting up position tracking
-        FileWriter positionWriter = new FileWriter(REPO_DIR_NAME + "/" +
-                POSITION_FILENAME);
+        FileWriter positionWriter = new FileWriter(
+                Paths.get(REPO_DIR_NAME, POSITION_FILENAME).toString());
         positionWriter.write("master\n0");
         positionWriter.close();
 
@@ -83,98 +77,112 @@ public class VCS {
         if (!Files.exists(Paths.get(REPO_DIR_NAME, USERNAME_FILE))) {
             throw new BadRepoException();
         }
-        FileWriter writer = new FileWriter(REPO_DIR_NAME + "/" + USERNAME_FILE);
+        FileWriter writer = new FileWriter(
+                Paths.get(REPO_DIR_NAME, USERNAME_FILE).toString());
         writer.write(name);
         writer.close();
     }
 
-    public static void commit(String message) throws IOException, BadRepoException {
+    public static void commit(String message) throws BadRepoException,
+            BadPositionException {
         if (Files.notExists(Paths.get(REPO_DIR_NAME, COMMITS_DIR_NAME))) {
             throw new BadRepoException();
         }
 
-        Integer number = getCommitsNumber() + 1;
-        List<String> prevPos = Files.readAllLines(Paths.get(REPO_DIR_NAME,
-                POSITION_FILENAME));
-        Integer pos = Integer.valueOf(prevPos.get(1));
-        String branch = prevPos.get(0);
-
-        Files.createDirectory(Paths.get(REPO_DIR_NAME, COMMITS_DIR_NAME,
-                number.toString()));
-
-        BufferedWriter metadataWriter = new BufferedWriter(new FileWriter(
-                Paths.get(REPO_DIR_NAME, COMMITS_DIR_NAME,
-                        number.toString(), COMMIT_METADATA_FILE).toString()));
-        //metadataWriter.write(LocalDateTime.now().
-        //        format(DateTimeFormatter.ofLocalizedDateTime(
-        //                FormatStyle.SHORT, FormatStyle.MEDIUM)) + '\n');
-        metadataWriter.write(String.valueOf(System.currentTimeMillis()) + '\n');
-        metadataWriter.write(branch + '\n');
-        metadataWriter.write(getUserName() + '\n');
-        metadataWriter.write(message);
-        metadataWriter.close();
-
-        BufferedWriter filesListWriter = new BufferedWriter(new FileWriter(
-                Paths.get(REPO_DIR_NAME, COMMITS_DIR_NAME, number.toString(),
-                        COMMIT_FILES_LIST).toString()
-        ));
-
-        Files.createDirectory(Paths.get(REPO_DIR_NAME, COMMITS_DIR_NAME,
-                number.toString(), COMMIT_CONTENT_DIR));
-
-        Set<String> staged = new HashSet<>();
-        Path contentDirPath = Paths.get(REPO_DIR_NAME, COMMITS_DIR_NAME,
-                number.toString(), COMMIT_CONTENT_DIR);
-        Path stageDirPath = Paths.get(REPO_DIR_NAME, STAGE_DIR);
-        Files.walk(Paths.get(REPO_DIR_NAME, STAGE_DIR)).forEach(path -> {
-            Path relativePath = stageDirPath.relativize(path);
-            staged.add(relativePath.toString());
+        try {
+            Integer number = getCommitsNumber() + 1;
+            Integer pos = getCurCommit();
+            String branch = getCurBranch();
+            Integer branchHead;
             try {
-                if (!path.equals(stageDirPath)) {
-                    filesListWriter.write(relativePath.toString() + ' ' +
-                            getFileHash(path.toString()) + '\n');
-                    Files.move(path, contentDirPath.resolve(relativePath));
-                }
-            } catch (IOException e) {
-                throw new FileSystemError();
+                branchHead = getBranchHead(branch);
+            } catch (NoSuchBranchException e) {
+                throw new BadRepoException();
             }
-        });
+            if (!branchHead.equals(pos)) {
+                throw new BadPositionException();
+            }
 
-        Map <String, String> oldFiles = new HashMap<>();
-        Files.lines(Paths.get(REPO_DIR_NAME, COMMITS_DIR_NAME, pos.toString(),
-                COMMIT_FILES_LIST)).forEach(line -> {
-                    int sep = line.indexOf(' ');
-                    String filename = line.substring(0, sep);
-                    oldFiles.put(filename, line);
-        });
+            Files.createDirectory(Paths.get(REPO_DIR_NAME, COMMITS_DIR_NAME,
+                    number.toString()));
 
-        Path parentCommitContent = Paths.get(REPO_DIR_NAME, COMMITS_DIR_NAME,
-                pos.toString(), COMMIT_CONTENT_DIR);
-        Files.walk(parentCommitContent).forEach(path -> {
-            Path relativePath = parentCommitContent.relativize(path);
+            BufferedWriter metadataWriter = new BufferedWriter(new FileWriter(
+                    Paths.get(REPO_DIR_NAME, COMMITS_DIR_NAME,
+                            number.toString(), COMMIT_METADATA_FILE).toString()));
+            metadataWriter.write(String.valueOf(System.currentTimeMillis()) + '\n');
+            metadataWriter.write(branch + '\n');
+            metadataWriter.write(getUserName() + '\n');
+            metadataWriter.write(branchHead.toString());
+            metadataWriter.write(message);
+            metadataWriter.close();
+
+            BufferedWriter filesListWriter = new BufferedWriter(new FileWriter(
+                    Paths.get(REPO_DIR_NAME, COMMITS_DIR_NAME, number.toString(),
+                            COMMIT_FILES_LIST).toString()
+            ));
+
+            Files.createDirectory(Paths.get(REPO_DIR_NAME, COMMITS_DIR_NAME,
+                    number.toString(), COMMIT_CONTENT_DIR));
+
+            Set<String> staged = new HashSet<>();
+            Path contentDirPath = Paths.get(REPO_DIR_NAME, COMMITS_DIR_NAME,
+                    number.toString(), COMMIT_CONTENT_DIR);
+            Path stageDirPath = Paths.get(REPO_DIR_NAME, STAGE_DIR);
+            Files.walk(Paths.get(REPO_DIR_NAME, STAGE_DIR)).forEach(path -> {
+                Path relativePath = stageDirPath.relativize(path);
+                staged.add(relativePath.toString());
+                try {
+                    if (!path.equals(stageDirPath)) {
+                        filesListWriter.write(relativePath.toString() + ' ' +
+                                getFileHash(path.toString()) + '\n');
+                        Files.move(path, contentDirPath.resolve(relativePath));
+                    }
+                } catch (IOException e) {
+                    throw new FileSystemError();
+                }
+            });
+
+            Map<String, String> oldFiles = new HashMap<>();
+            Files.lines(Paths.get(REPO_DIR_NAME, COMMITS_DIR_NAME, pos.toString(),
+                    COMMIT_FILES_LIST)).forEach(line -> {
+                int sep = line.indexOf(' ');
+                String filename = line.substring(0, sep);
+                oldFiles.put(filename, line);
+            });
+
+            Path parentCommitContent = Paths.get(REPO_DIR_NAME, COMMITS_DIR_NAME,
+                    pos.toString(), COMMIT_CONTENT_DIR);
+            Files.walk(parentCommitContent).forEach(path -> {
+                Path relativePath = parentCommitContent.relativize(path);
+                try {
+                    if (!path.equals(parentCommitContent) &&
+                            !staged.contains(relativePath.toString())) {
+                        filesListWriter.write(oldFiles.get(relativePath.toString()) + '\n');
+                        Files.copy(path, contentDirPath.resolve(relativePath));
+                    }
+                } catch (IOException e) {
+                    throw new FileSystemError();
+                }
+            });
+
+            filesListWriter.close();
+
+            Files.write(Paths.get(REPO_DIR_NAME, COMMITS_COUNTER_FILENAME),
+                    String.valueOf(number).getBytes());
+            Files.write(Paths.get(REPO_DIR_NAME, POSITION_FILENAME),
+                    (branch + '\n' + number).getBytes());
+            Files.write(Paths.get(REPO_DIR_NAME, BRANCHES_DIR_NAME, branch),
+                    (number.toString() + '\n').getBytes(), StandardOpenOption.APPEND);
+            wipeDir(stageDirPath);
+        } catch (IOException e) {
             try {
-                if (!path.equals(parentCommitContent) &&
-                        !staged.contains(relativePath.toString())) {
-                    filesListWriter.write(oldFiles.get(relativePath.toString()) + '\n');
-                    Files.copy(path, contentDirPath.resolve(relativePath));
-                }
-            } catch (IOException e) {
-                throw new FileSystemError();
-            }
-        });
-
-        filesListWriter.close();
-
-        Files.write(Paths.get(REPO_DIR_NAME, COMMITS_COUNTER_FILENAME),
-                String.valueOf(number).getBytes());
-        Files.write(Paths.get(REPO_DIR_NAME, POSITION_FILENAME),
-                (branch + '\n' + number).getBytes());
-        Files.write(Paths.get(REPO_DIR_NAME, BRANCHES_DIR_NAME, branch),
-                (number.toString() + '\n').getBytes(), StandardOpenOption.APPEND);
-        wipeDir(stageDirPath);
+                deleteDir(Paths.get(REPO_DIR_NAME));
+            } catch (IOException e1) {}
+            throw new FileSystemError();
+        }
     }
 
-    public static void addFile(String path) throws BadRepoException, NonExistentFileException {
+    public static void addFile(String path) throws BadRepoException, NoSuchFileException {
         if (Files.exists(Paths.get(path))) {
             Path stageDirPath = Paths.get(REPO_DIR_NAME, STAGE_DIR);
             if (Files.notExists(stageDirPath)) {
@@ -187,7 +195,7 @@ public class VCS {
                 throw new FileSystemError();
             }
         } else {
-            throw new NonExistentFileException();
+            throw new NoSuchFileException();
         }
     }
 
@@ -213,7 +221,7 @@ public class VCS {
         }
 
         public static void deleteBranch(String branchName) throws BadRepoException,
-                NonExistentBranchException {
+                NoSuchBranchException {
             if (branchName.equals("master")) {
                 throw new IllegalArgumentException();
             }
@@ -225,7 +233,7 @@ public class VCS {
                 throw new BadRepoException();
             }
             if (Files.notExists(branchDescription)) {
-                throw new NonExistentBranchException();
+                throw new NoSuchBranchException();
             }
 
             try {
@@ -261,14 +269,14 @@ public class VCS {
         }
 
         public static List<Commit> getLog(String branchName) throws BadRepoException,
-                NonExistentBranchException {
+                NoSuchBranchException {
             if (Files.notExists(Paths.get(REPO_DIR_NAME, BRANCHES_DIR_NAME))) {
                 throw new BadRepoException();
             }
             Path branchDescriptionPath = Paths.get(REPO_DIR_NAME, BRANCHES_DIR_NAME,
                     branchName);
             if (Files.notExists(branchDescriptionPath)) {
-                throw new NonExistentBranchException();
+                throw new NoSuchBranchException();
             }
 
             Path commitsDir = Paths.get(REPO_DIR_NAME, COMMITS_DIR_NAME);
@@ -282,6 +290,7 @@ public class VCS {
                         long time = commitScanner.nextLong();
                         String branch = commitScanner.next();
                         String author = commitScanner.next();
+                        commitScanner.next();
                         StringBuilder messageBuilder = new StringBuilder();
                         while (commitScanner.hasNext()) {
                             messageBuilder.append(commitScanner.nextLine());
@@ -373,34 +382,21 @@ public class VCS {
     public static void checkoutCommit(int commitID) throws BadRepoException,
             NoSuchCommitException {
         int curCommit = getCurCommit();
-        Path curCommitList = Paths.get(REPO_DIR_NAME, COMMIT_METADATA_FILE,
+        Path curCommitList = Paths.get(REPO_DIR_NAME, COMMITS_DIR_NAME,
                 String.valueOf(curCommit), COMMIT_FILES_LIST);
-        try {
-            Files.readAllLines(curCommitList).forEach(line -> {
-                Path path = Paths.get(line.substring(0, line.indexOf(' ')));
-                try {
-                    if (Files.isDirectory(path)) {
-                        deleteDir(path);
-                    } else {
-                        Files.delete(path);
-                    }
-                } catch (IOException e) {
-                    throw new FileSystemError();
-                }
-            });
-        } catch (IOException e) {
-            throw new FileSystemError();
-        }
+        clearCommitted(curCommitList);
 
         Path newContent = Paths.get(REPO_DIR_NAME, COMMITS_DIR_NAME,
                 String.valueOf(commitID), COMMIT_CONTENT_DIR);
         try {
             Files.walk(newContent).forEach(path -> {
-                Path relativePath = newContent.relativize(path);
-                try {
-                    Files.copy(path, relativePath);
-                } catch (IOException e) {
-                    throw new FileSystemError();
+                if (!path.equals(newContent)) {
+                    Path relativePath = newContent.relativize(path);
+                    try {
+                        Files.copy(path, relativePath);
+                    } catch (IOException e) {
+                        throw new FileSystemError();
+                    }
                 }
             });
         } catch (IOException e) {
@@ -413,18 +409,168 @@ public class VCS {
             Files.write(posFilePath, (branch + '\n' + String.valueOf(commitID))
                     .getBytes());
         } catch (IOException e) {
+            e.printStackTrace();
+            throw new FileSystemError();
+        }
+    }
+
+    private static void clearCommitted(Path commitList) {
+        try {
+            Files.readAllLines(commitList).forEach(line -> {
+                Path path = Paths.get(line.substring(0, line.indexOf(' ')));
+                try {
+                    if (Files.exists(path)) {
+                        if (Files.isDirectory(path)) {
+                            deleteDir(path);
+                        } else {
+                            Files.delete(path);
+                        }
+                    }
+                } catch (IOException e) {
+                    throw new FileSystemError();
+                }
+            });
+        } catch (IOException e) {
             throw new FileSystemError();
         }
     }
 
     public static void checkoutBranch(String branchName) throws BadRepoException,
-            NonExistentBranchException {
+            NoSuchBranchException {
         int branchHead = getBranchHead(branchName);
         try {
             checkoutCommit(branchHead);
         } catch (NoSuchCommitException e) {
             throw new BadRepoException();
         }
+    }
+
+    public static void merge(String branchName) throws BadPositionException,
+            BadRepoException, NoSuchBranchException {
+        Integer curCommit = getCurCommit();
+        Integer mergedCommit = getBranchHead(branchName);
+        if (curCommit != getBranchHead(getCurBranch())) {
+            throw new BadPositionException();
+        }
+        if (Files.notExists(Paths.get(REPO_DIR_NAME, BRANCHES_DIR_NAME, branchName))) {
+            throw new NoSuchBranchException();
+        }
+
+        List<Integer> curCommitOrigin = getCommitOrigin(curCommit);
+        List<Integer> mergedCommitOrigin = getCommitOrigin(mergedCommit);
+
+        int i = 0;
+        while (i < curCommitOrigin.size() && i < mergedCommitOrigin.size() &&
+                curCommitOrigin.get(i).equals(mergedCommitOrigin.get(i))) {
+            i++;
+        }
+        Integer commonPredecessor = curCommitOrigin.get(i - 1);
+
+        Map<String, FileDescription> sourceFiles = getCommitFilesInfo(commonPredecessor);
+        Map<String, FileDescription> mergedFiles = getCommitFilesInfo(mergedCommit);
+        Map<String, FileDescription> curFiles = getCommitFilesInfo(curCommit);
+        Map<String, FileDescription> resFiles = new HashMap<>();
+
+        resFiles.putAll(curFiles);
+        resFiles.putAll(mergedFiles);
+
+        sourceFiles.forEach((name, desc) -> {
+            if (!curFiles.containsKey(name) || !mergedFiles.containsKey(name)) {
+                resFiles.remove(name);
+            }
+        });
+
+        clearCommitted(Paths.get(REPO_DIR_NAME, COMMITS_DIR_NAME,
+                curCommit.toString(), COMMIT_FILES_LIST));
+        resFiles.forEach((name, desc) -> {
+            Path newPath = Paths.get(REPO_DIR_NAME, name);
+            try {
+                Files.copy(desc.getPath(), newPath);
+                addFile(name);
+            } catch (BadRepoException | NoSuchFileException | IOException e) {
+                throw new FileSystemError();
+            }
+        });
+        commit("Branch " + branchName + " merged");
+    }
+
+    private static class FileDescription {
+        private String hash;
+        private Path path;
+
+        FileDescription(String hash, Path path) {
+            this.hash = hash;
+            this.path = path;
+        }
+
+        public String getHash() {
+            return hash;
+        }
+
+        public Path getPath() {
+            return path;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return obj instanceof FileDescription &&
+                    hash.equals(((FileDescription)obj).hash);
+        }
+    }
+
+    private static List<Integer> getCommitOrigin(Integer commitID) throws
+            BadRepoException {
+        ArrayList<Integer> origin = new ArrayList<>();
+        Integer pos = commitID;
+        while (!pos.equals(0)) {
+            origin.add(pos);
+            pos = getCommitParent(pos);
+        }
+        origin.add(0);
+        Collections.reverse(origin);
+        return origin;
+    }
+
+    private static Integer getCommitParent(Integer commitID) throws
+            BadRepoException {
+        Path commitDescription = Paths.get(REPO_DIR_NAME, COMMITS_DIR_NAME,
+                commitID.toString(), COMMIT_METADATA_FILE);
+        if (Files.notExists(commitDescription)) {
+            throw new BadRepoException();
+        }
+
+        Integer parent;
+        try (Scanner descriptionScanner = new Scanner(commitDescription)) {
+            descriptionScanner.next();
+            descriptionScanner.next();
+            parent = descriptionScanner.nextInt();
+        } catch (IOException e) {
+            throw new FileSystemError();
+        }
+        return parent;
+    }
+
+    private static Map<String, FileDescription> getCommitFilesInfo(Integer commitID)
+            throws BadRepoException {
+        Path filesListPath = Paths.get(REPO_DIR_NAME, COMMITS_DIR_NAME,
+                commitID.toString(), COMMIT_FILES_LIST);
+        Path contentDir = Paths.get(REPO_DIR_NAME, COMMITS_DIR_NAME,
+                commitID.toString(), COMMIT_CONTENT_DIR);
+
+        if (Files.notExists(filesListPath) || Files.notExists(contentDir)) {
+            throw new BadRepoException();
+        }
+        Map<String, FileDescription> files = new HashMap<>();
+        try {
+            Files.lines(filesListPath).forEach(line -> {
+                String[] info = line.split(" ");
+                files.put(info[0], new FileDescription(info[1],
+                        contentDir.resolve(info[0])));
+            });
+        } catch (IOException e) {
+            throw new FileSystemError();
+        }
+        return files;
     }
 
     private static void deleteDir(Path dir) throws IOException {
@@ -486,13 +632,13 @@ public class VCS {
     }
 
     private static int getBranchHead(String branchName) throws BadRepoException,
-            NonExistentBranchException {
+            NoSuchBranchException {
         Path branchPath = Paths.get(REPO_DIR_NAME, BRANCHES_DIR_NAME, branchName);
         if (Files.notExists(Paths.get(REPO_DIR_NAME, BRANCHES_DIR_NAME))) {
             throw new BadRepoException();
         }
         if (Files.notExists(branchPath)) {
-            throw new NonExistentBranchException();
+            throw new NoSuchBranchException();
         }
 
         String number = null;
@@ -508,8 +654,8 @@ public class VCS {
 
     private static String getCommitBranch(int commit) throws IOException {
         String branch;
-        Path metadataPath = Paths.get(REPO_DIR_NAME, COMMITS_COUNTER_FILENAME,
-                String.valueOf(commit), COMMIT_CONTENT_DIR);
+        Path metadataPath = Paths.get(REPO_DIR_NAME, COMMITS_DIR_NAME,
+                String.valueOf(commit), COMMIT_METADATA_FILE);
         Scanner scanner = new Scanner(metadataPath);
         scanner.next();
         branch = scanner.next();
@@ -523,9 +669,11 @@ public class VCS {
 
     public static class FileSystemError extends Error{}
 
-    public static class NonExistentFileException extends Exception{}
+    public static class NoSuchFileException extends Exception{}
 
-    public static class NonExistentBranchException extends Exception{}
+    public static class NoSuchBranchException extends Exception{}
 
     public static class NoSuchCommitException extends Exception{}
+
+    public static class BadPositionException extends Exception{}
 }
