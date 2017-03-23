@@ -1,4 +1,3 @@
-import java.io.IOException;
 import java.util.List;
 
 public class Main {
@@ -13,9 +12,9 @@ public class Main {
                     } else {
                         try {
                             VCS.createRepo(args[1]);
-                        } catch (VCS.AlreadyExistsException e) {
+                        } catch (VCS.RepoAlreadyExistsException e) {
                             System.out.println("Repo already exists.");
-                        } catch (IOException e) {
+                        } catch (VCS.FileSystemError e) {
                             System.out.println("File system error.");
                         }
                     }
@@ -58,10 +57,10 @@ public class Main {
                         switch (args[1]) {
                             case "create": {
                                 try {
-                                    VCS.Branch.createBranch(args[2]);
+                                    VCS.createBranch(args[2]);
                                 } catch (VCS.BadRepoException e) {
                                     System.out.println("Incorrect repo");
-                                } catch (VCS.AlreadyExistsException e) {
+                                } catch (VCS.BranchAlreadyExistsException e) {
                                     System.out.println("A branch with this name " +
                                             "already exists.");
                                 } catch (VCS.FileSystemError e) {
@@ -74,7 +73,7 @@ public class Main {
                                     System.out.println("Branch master cannot be deleted.");
                                 } else {
                                     try {
-                                        VCS.Branch.deleteBranch(args[2]);
+                                        VCS.deleteBranch(args[2]);
                                     } catch (VCS.FileSystemError e) {
                                         System.out.println("Filesystem error");
                                     } catch (VCS.BadRepoException e) {
@@ -97,7 +96,7 @@ public class Main {
                 }
                 case "log": {
                     try {
-                        List<VCS.Commit> commits = VCS.Branch.getLog(VCS.getCurBranch());
+                        List<VCS.Commit> commits = VCS.getLog(VCS.getCurBranch());
                         System.out.printf("%4s%12s %12s%8s %s\n", "ID", "Author",
                                 "Date", "Time", "Message");
                         commits.forEach(commit ->
