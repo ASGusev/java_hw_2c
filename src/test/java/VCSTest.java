@@ -67,17 +67,17 @@ public class VCSTest {
     @Test
     public void addTest() throws VCS.RepoAlreadyExistsException, IOException,
             VCS.BadRepoException, VCS.NoSuchFileException {
-        final String testContent = "foo";
-        final List<String> expectedContent = Collections.singletonList(testContent);
-        final String testFileName = "foo";
+        final String TEST_CONTENT = "foo";
+        final List<String> EXPECTED_CONTENT = Collections.singletonList(TEST_CONTENT);
+        final String TEST_FILENAME = "foo";
         VCS.createRepo("user");
-        Path testFilePath = Paths.get(testFileName);
+        Path testFilePath = Paths.get(TEST_FILENAME);
         try {
-            Files.write(testFilePath, testContent.getBytes());
-            VCS.addFile(testFileName);
-            Path stagedFilePath = Paths.get(REPO_DIR_NAME, STAGE_DIR, testFileName);
+            Files.write(testFilePath, TEST_CONTENT.getBytes());
+            VCS.addFile(TEST_FILENAME);
+            Path stagedFilePath = Paths.get(REPO_DIR_NAME, STAGE_DIR, TEST_FILENAME);
             List<String> addedContend = Files.readAllLines(stagedFilePath);
-            Assert.assertEquals(expectedContent, addedContend);
+            Assert.assertEquals(EXPECTED_CONTENT, addedContend);
         } finally {
             Files.delete(testFilePath);
             deleteDir(REPO_DIR_NAME);
@@ -88,19 +88,19 @@ public class VCSTest {
     public void commitTest() throws IOException, VCS.RepoAlreadyExistsException,
             VCS.BadRepoException, VCS.NoSuchFileException, VCS.BadPositionException {
         final String USERNAME = "user";
-        final String testContent = "foo";
-        final String testFileName = "foo";
-        final String message = "bar";
-        final List<String> expectedContent = Collections.singletonList(testContent);
+        final String TEST_CONTENT = "foo";
+        final String TEST_FILE_NAME = "foo";
+        final String MESSAGE = "bar";
+        final List<String> EXPECTED_CONTENT = Collections.singletonList(TEST_CONTENT);
         VCS.createRepo(USERNAME);
 
         try {
-            Files.write(Paths.get(testFileName), testContent.getBytes());
-            VCS.addFile(testFileName);
-            VCS.commit(message);
+            Files.write(Paths.get(TEST_FILE_NAME), TEST_CONTENT.getBytes());
+            VCS.addFile(TEST_FILE_NAME);
+            VCS.commit(MESSAGE);
             List<String> committedContent = Files.readAllLines(Paths.get(REPO_DIR_NAME,
                     COMMITS_DIR_NAME, "1", COMMIT_CONTENT_DIR, "foo"));
-            Assert.assertEquals(expectedContent, committedContent);
+            Assert.assertEquals(EXPECTED_CONTENT, committedContent);
 
             Path commitMetadata = Paths.get(REPO_DIR_NAME, COMMITS_DIR_NAME, "1"
                     , COMMIT_METADATA_FILE);
@@ -110,9 +110,30 @@ public class VCSTest {
             Assert.assertEquals("user", metadataScanner.next());
             Assert.assertEquals(0, metadataScanner.nextInt());
             metadataScanner.nextLine();
-            Assert.assertEquals(message, metadataScanner.nextLine());
+            Assert.assertEquals(MESSAGE, metadataScanner.nextLine());
         } finally {
-            Files.delete(Paths.get(testFileName));
+            Files.delete(Paths.get(TEST_FILE_NAME));
+            deleteDir(REPO_DIR_NAME);
+        }
+    }
+
+    @Test
+    public void branchTest() throws VCS.RepoAlreadyExistsException, IOException,
+            VCS.BranchAlreadyExistsException, VCS.BadRepoException,
+            VCS.NoSuchBranchException {
+        final String BRANCH_NAME = "br";
+        VCS.createRepo("usr");
+        try {
+            VCS.createBranch(BRANCH_NAME);
+            Path branchDescPath = Paths.get(REPO_DIR_NAME, BRANCHES_DIR_NAME,
+                    BRANCH_NAME);
+            Assert.assertTrue("Branch creation failure",
+                    Files.exists(branchDescPath));
+
+            VCS.deleteBranch(BRANCH_NAME);
+            Assert.assertTrue("Branch deletion failure",
+                    Files.notExists(branchDescPath));
+        } finally {
             deleteDir(REPO_DIR_NAME);
         }
     }

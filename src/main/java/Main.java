@@ -163,6 +163,18 @@ public class Main {
                     }
                     break;
                 }
+                case "login": {
+                    if (args.length < 2) {
+                        showHelp();
+                    } else {
+                        try {
+                            VCS.setUser(args[1]);
+                        } catch (VCS.BadRepoException e) {
+                            System.out.println("Incorrect repo.");
+                        }
+                    }
+                    break;
+                }
 
                 default: {
                     showHelp();
@@ -182,6 +194,7 @@ public class Main {
         "checkout commit <number> - returns the repo to the state of the " +
                 "specified commit\n" +
         "checkout branch <name> - checks out the head of the given branch\n" +
-        "merge <branch name> - merges the givrn branch into current");
+        "merge <branch name> - merges the given branch into current\n" +
+        "login <new username> - changes current username to the given one");
     }
 }
