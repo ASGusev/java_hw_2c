@@ -4,14 +4,12 @@ import org.junit.Test;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Scanner;
-import java.util.stream.Stream;
 
 public class VCSTest {
     private static final String REPO_DIR_NAME = ".vcs";
@@ -56,7 +54,7 @@ public class VCSTest {
             final String USERNAME_1 = "user1";
             final String USERNAME_2 = "user2";
             VCS.createRepo(USERNAME_1);
-            VCS.setUser(USERNAME_2);
+            VCS.setUserName(USERNAME_2);
             Assert.assertEquals(Files.readAllLines(Paths.get(REPO_DIR_NAME, USERNAME_FILE)),
                     Collections.singletonList(USERNAME_2));
         } finally {

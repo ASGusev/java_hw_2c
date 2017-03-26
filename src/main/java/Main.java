@@ -39,7 +39,7 @@ public class Main {
                 }
                 case "commit": {
                     if (args.length == 1) {
-                        System.out.println("Commit message required.");
+                        System.out.println("CommitDescription message required.");
                     } else {
                         try {
                             VCS.commit(args[1]);
@@ -81,6 +81,9 @@ public class Main {
                                     } catch (VCS.NoSuchBranchException e) {
                                         System.out.println("A branch called " +
                                                 args[2] + " does not exist.");
+                                    } catch (VCS.BadPositionException e) {
+                                        System.out.println("Current branch cannot be" +
+                                                " deleted.");
                                     }
                                 }
                                 break;
@@ -96,7 +99,7 @@ public class Main {
                 }
                 case "log": {
                     try {
-                        List<VCS.Commit> commits = VCS.getLog(VCS.getCurBranch());
+                        List<VCS.CommitDescription> commits = VCS.getLog();
                         System.out.printf("%4s%12s %12s%8s %s\n", "ID", "Author",
                                 "Date", "Time", "Message");
                         commits.forEach(commit ->
@@ -168,7 +171,7 @@ public class Main {
                         showHelp();
                     } else {
                         try {
-                            VCS.setUser(args[1]);
+                            VCS.setUserName(args[1]);
                         } catch (VCS.BadRepoException e) {
                             System.out.println("Incorrect repo.");
                         }
