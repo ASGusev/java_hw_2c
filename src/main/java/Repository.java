@@ -15,13 +15,25 @@ public abstract class Repository {
     protected static final String POSITION_FILENAME = "position";
     protected static final String STAGE_DIR = "stage";
     protected static final String DEFAULT_BRANCH = "master";
+    protected static final String WORKING_DIR_HASHES = "hashes";
+    private static HashedDirectory workingDirectory;
 
     protected static void create(String author) throws VCS.RepoAlreadyExistsException {
-        if (Files.exists(Paths.get(VCS.REPO_DIR_NAME), LinkOption.NOFOLLOW_LINKS)) {
+        if (Files.exists(Paths.get(Repository.REPO_DIR_NAME), LinkOption.NOFOLLOW_LINKS)) {
             throw new VCS.RepoAlreadyExistsException();
         }
         try {
-            Files.createDirectory(Paths.get(VCS.REPO_DIR_NAME));
+            Files.createDirectory(Paths.get(Repository.REPO_DIR_NAME));
+
+            //Setting username
+            Files.write(Paths.get(REPO_DIR_NAME, USERNAME_FILE), author.getBytes());
+
+            //Setting up commit counter
+            Files.write(Paths.get(REPO_DIR_NAME, COMMITS_COUNTER_FILENAME),
+                    "0".getBytes());
+
+            //Creating stage directory
+            Files.createDirectory(Paths.get(REPO_DIR_NAME, STAGE_DIR));
 
             //Setting up position tracking
             Files.write(Paths.get(REPO_DIR_NAME, POSITION_FILENAME),
@@ -38,16 +50,6 @@ public abstract class Repository {
             } catch (VCS.BadPositionException e) {
                 throw new VCS.BadRepoException();
             }
-
-            //Setting username
-            Files.write(Paths.get(REPO_DIR_NAME, USERNAME_FILE), author.getBytes());
-
-            //Setting up commit counter
-            Files.write(Paths.get(REPO_DIR_NAME, COMMITS_COUNTER_FILENAME),
-                    "0".getBytes());
-
-            //Creating stage directory
-            Files.createDirectory(Paths.get(REPO_DIR_NAME, STAGE_DIR));
         } catch (IOException | VCS.BadRepoException e) {
             try {
                 HashedDirectory.deleteDir(Paths.get(REPO_DIR_NAME));
@@ -175,5 +177,13 @@ public abstract class Repository {
         } catch (IOException e){
             throw new VCS.FileSystemError();
         }
+    }
+
+    protected static HashedDirectory getWorkingDirectory() {
+        if (workingDirectory == null) {
+            workingDirectory = new HashedDirectory(Paths.get("."),
+                    Paths.get(REPO_DIR_NAME, WORKING_DIR_HASHES));
+        }
+        return workingDirectory;
     }
 }

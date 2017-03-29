@@ -11,7 +11,8 @@ public abstract class StagingZone {
             new HashedDirectory(STAGE_PATH, LIST_PATH);
 
     protected static void addFile(Path filePath) throws VCS.NoSuchFileException {
-        STAGE_DIR.addFile(filePath);
+        STAGE_DIR.addFile(Paths.get("."), filePath);
+        STAGE_DIR.flushHashes();
     }
 
     protected static HashedDirectory getDir() {

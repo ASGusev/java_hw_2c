@@ -1,7 +1,6 @@
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -43,7 +42,7 @@ public class VCSTest {
             Assert.assertEquals(Arrays.asList("master", "0"),
                     Files.readAllLines(Paths.get(REPO_DIR_NAME, POSITION_FILENAME)));
         } finally {
-            deleteDir(REPO_DIR_NAME);
+            HashedDirectory.deleteDir(Paths.get(Repository.REPO_DIR_NAME));
         }
     }
 
@@ -58,7 +57,7 @@ public class VCSTest {
             Assert.assertEquals(Files.readAllLines(Paths.get(REPO_DIR_NAME, USERNAME_FILE)),
                     Collections.singletonList(USERNAME_2));
         } finally {
-            deleteDir(REPO_DIR_NAME);
+            HashedDirectory.deleteDir(Paths.get(REPO_DIR_NAME));
         }
     }
 
@@ -78,7 +77,7 @@ public class VCSTest {
             Assert.assertEquals(EXPECTED_CONTENT, addedContend);
         } finally {
             Files.delete(testFilePath);
-            deleteDir(REPO_DIR_NAME);
+            HashedDirectory.deleteDir(Paths.get(Repository.REPO_DIR_NAME));
         }
     }
 
@@ -111,43 +110,7 @@ public class VCSTest {
             Assert.assertEquals(MESSAGE, metadataScanner.nextLine());
         } finally {
             Files.delete(Paths.get(TEST_FILE_NAME));
-            deleteDir(REPO_DIR_NAME);
-        }
-    }
-
-    @Test
-    public void branchTest() throws VCS.RepoAlreadyExistsException, IOException,
-            VCS.BranchAlreadyExistsException, VCS.BadRepoException,
-            VCS.NoSuchBranchException {
-        final String BRANCH_NAME = "br";
-        VCS.createRepo("usr");
-        try {
-            VCS.createBranch(BRANCH_NAME);
-            Path branchDescPath = Paths.get(REPO_DIR_NAME, BRANCHES_DIR_NAME,
-                    BRANCH_NAME);
-            Assert.assertTrue("Branch creation failure",
-                    Files.exists(branchDescPath));
-
-            VCS.deleteBranch(BRANCH_NAME);
-            Assert.assertTrue("Branch deletion failure",
-                    Files.notExists(branchDescPath));
-        } finally {
-            deleteDir(REPO_DIR_NAME);
-        }
-    }
-
-    private static void deleteDir(String dir) throws IOException {
-        File dirFile = new File(dir);
-        wipeDir(dirFile);
-        dirFile.delete();
-    }
-
-    private static void wipeDir(File dir) throws IOException {
-        for (File file: dir.listFiles()) {
-            if (file.isDirectory()) {
-                wipeDir(file);
-            }
-            file.delete();
+            HashedDirectory.deleteDir(Paths.get(REPO_DIR_NAME));
         }
     }
 }

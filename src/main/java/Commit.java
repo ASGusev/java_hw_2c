@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Scanner;
+import java.util.*;
 
 public class Commit {
     protected static final String COMMIT_CONTENT_DIR = "content";
@@ -31,8 +31,12 @@ public class Commit {
         return author;
     }
 
-    protected Integer getFather() {
-        return father;
+    protected Commit getFather() throws VCS.BadRepoException {
+        try {
+            return new Commit(father);
+        } catch (VCS.NoSuchCommitException e) {
+            throw new VCS.BadRepoException();
+        }
     }
 
     private final Integer number;
@@ -41,15 +45,17 @@ public class Commit {
     private final Branch branch;
     private final String author;
     private final Integer father;
+    private final Path rootDir;
 
     protected Commit(String message) throws VCS.BadRepoException,
             VCS.BadPositionException {
-        if (Files.notExists(Paths.get(VCS.REPO_DIR_NAME, VCS.COMMITS_DIR_NAME))) {
+        if (Files.notExists(Paths.get(Repository.REPO_DIR_NAME,
+                Repository.COMMITS_DIR_NAME))) {
             throw new VCS.BadRepoException();
         }
 
         number = Repository.getCommitsNumber() + 1;
-        Path rootDir = Paths.get(VCS.REPO_DIR_NAME, VCS.COMMITS_DIR_NAME,
+        rootDir = Paths.get(Repository.REPO_DIR_NAME, Repository.COMMITS_DIR_NAME,
                 number.toString());
         creationTime = System.currentTimeMillis();
         this.message = message;
@@ -77,6 +83,7 @@ public class Commit {
             HashedDirectory contentDir = new HashedDirectory(
                     rootDir.resolve(COMMIT_CONTENT_DIR), rootDir.resolve(COMMIT_FILES_LIST));
             contentDir.cloneDirectory(StagingZone.getDir());
+            contentDir.flushHashes();
 
             branch.addCommit(number);
             Repository.setCurrentCommit(this);
@@ -93,7 +100,7 @@ public class Commit {
     protected Commit(Integer number) throws VCS.NoSuchCommitException,
             VCS.BadRepoException {
         this.number = number;
-        Path rootDir = Paths.get(Repository.REPO_DIR_NAME, Repository.COMMITS_DIR_NAME,
+        rootDir = Paths.get(Repository.REPO_DIR_NAME, Repository.COMMITS_DIR_NAME,
                 number.toString());
 
         if (Files.notExists(rootDir)) {
@@ -117,5 +124,69 @@ public class Commit {
         } catch (IOException e) {
             throw new VCS.FileSystemError();
         }
+    }
+
+    protected void clear() {
+        Path contentDir = rootDir.resolve(COMMIT_CONTENT_DIR);
+        try {
+            Files.walk(contentDir)
+                    .filter(Files::isRegularFile)
+                    .forEach(path -> {
+                        try {
+                            Files.delete(contentDir.relativize(path));
+                        } catch (IOException e) {
+                            throw new VCS.FileSystemError();
+                        }
+                    });
+            Files.walk(contentDir)
+                    .filter(Files::isDirectory)
+                    .forEach(path -> {
+                        try {
+                            Files.delete(contentDir.relativize(path));
+                        } catch (IOException e) {
+                            throw new VCS.FileSystemError();
+                        }
+                    });
+        } catch (IOException e) {
+            throw new VCS.FileSystemError();
+        }
+    }
+
+
+    protected void checkout() throws VCS.BadRepoException {
+        Path contentDir = rootDir.resolve(number.toString());
+        HashedDirectory contentDirectory = new HashedDirectory(contentDir,
+                rootDir.resolve(COMMIT_FILES_LIST));
+
+        HashedDirectory workingDirectory = Repository.getWorkingDirectory();
+        workingDirectory.cloneDirectory(contentDirectory);
+
+        HashedDirectory stageDir = StagingZone.getDir();
+        stageDir.cloneDirectory(contentDirectory);
+        stageDir.flushHashes();
+
+        Repository.setCurrentCommit(this);
+    }
+
+    protected List<Commit> getPedigree() throws VCS.BadRepoException {
+        ArrayList<Commit> pedigree = new ArrayList<>();
+        pedigree.add(this);
+        Commit pos = this;
+        while (!pos.getNumber().equals(0)) {
+            pos = pos.getFather();
+            pedigree.add(pos);
+        }
+        Collections.reverse(pedigree);
+        return pedigree;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        return o instanceof Commit && ((Commit)o).number.equals(this.number);
+    }
+
+    public Map<Path, HashedFile> getFileDescriptions() {
+        return new HashedDirectory(rootDir.resolve(COMMIT_CONTENT_DIR),
+                rootDir.resolve(COMMIT_FILES_LIST)).getFileDescriptions();
     }
 }

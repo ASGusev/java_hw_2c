@@ -1,80 +1,61 @@
-import java.io.BufferedWriter;
-import java.io.FileInputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.math.BigInteger;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.security.DigestInputStream;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.List;
-import java.util.stream.Stream;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class HashedDirectory {
     private final Path dir;
     private final Path hashesPath;
+    private Map<Path, HashedFile> hashes;
 
-    HashedDirectory(Path dir, Path hashesPath) {
+    protected HashedDirectory(Path dir, Path hashesPath) {
         this.dir = dir;
         this.hashesPath = hashesPath;
-    }
-
-    protected static String getFileHash(String filePath) {
-        DigestInputStream stream;
-        byte[] hash = null;
-        try (FileInputStream fin = new FileInputStream(filePath)) {
-            MessageDigest messageDigest = MessageDigest.getInstance("SHA-1");
-            stream = new DigestInputStream(fin, messageDigest);
-            while (stream.read() != -1) {}
-            hash = messageDigest.digest();
+        hashes = new LinkedHashMap<>();
+        try {
+            if (Files.exists(hashesPath)) {
+                for (String line : Files.readAllLines(hashesPath)) {
+                    String[] parts = line.split(" ");
+                    hashes.put(Paths.get(parts[0]),
+                            new HashedFile(Paths.get(parts[0]), parts[1]));
+                }
+            } else {
+                Files.createFile(hashesPath);
+            }
         } catch (IOException e) {
             throw new VCS.FileSystemError();
-        } catch (NoSuchAlgorithmException e) {}
-        return new BigInteger(1, hash).toString();
+        }
     }
 
-    protected static void wipeDir(Path dir) throws IOException {
-        Stream<Path> content = Files.list(dir);
-        content.forEach(path -> {
-            try {
-                if (Files.isDirectory(path)) {
-                    deleteDir(path);
-                } else {
-                    Files.delete(path);
-                }
-            } catch (IOException e) {
-                throw new VCS.FileSystemError();
+    protected static void wipeDir(File dir) throws IOException {
+        for (File file: dir.listFiles()) {
+            if (file.isDirectory()) {
+                wipeDir(file);
             }
-        });
-        content.close();
+            file.delete();
+        }
     }
 
     protected static void deleteDir(Path dir) throws IOException {
-        wipeDir(dir);
+        wipeDir(dir.toFile());
         Files.delete(dir);
     }
 
-    void addFile(Path filePath) throws VCS.NoSuchFileException {
+    void addFile(Path dirPath, Path filePath) throws VCS.NoSuchFileException {
         try {
             if (!Files.isRegularFile(filePath)) {
                 throw new VCS.NoSuchFileException();
             }
 
             Files.createDirectories(dir.resolve(filePath).getParent());
-            Files.copy(filePath, dir.resolve(filePath), StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(dirPath.resolve(filePath), dir.resolve(filePath),
+                    StandardCopyOption.REPLACE_EXISTING);
 
-            List<String> hashes = Files.readAllLines(hashesPath);
-            hashes.removeIf(s -> s.startsWith(filePath.toString()));
-            BufferedWriter listWriter = new BufferedWriter(
-                    new FileWriter(hashesPath.toString()));
-            for (String hash : hashes) {
-                listWriter.write(hash + '\n');
-            }
-            listWriter.write(filePath.toString() + ' ' +
-                    HashedDirectory.getFileHash(filePath.toString()) + '\n');
-            listWriter.close();
+            hashes.put(filePath,
+                    new HashedFile(Paths.get(dir.resolve(filePath).toString())));
         } catch (IOException e) {
             throw new VCS.FileSystemError();
         }
@@ -82,7 +63,7 @@ public class HashedDirectory {
 
     protected void cloneDirectory(HashedDirectory src) {
         try {
-            Files.copy(src.hashesPath, hashesPath, StandardCopyOption.REPLACE_EXISTING);
+            hashes.putAll(src.hashes);
             Files.walk(src.dir).forEach(srcPath -> {
                 try {
                     Path targetPath = dir.resolve(src.dir.relativize(srcPath));
@@ -96,5 +77,25 @@ public class HashedDirectory {
         } catch (IOException e) {
             throw new VCS.FileSystemError();
         }
+    }
+
+    protected void flushHashes() {
+        try {
+            BufferedWriter hashWriter = new BufferedWriter(
+                    new FileWriter(hashesPath.toString()));
+            hashes.forEach((path, s) -> {
+                try {
+                    hashWriter.write(path.toString() + ' ' + s + '\n');
+                } catch (IOException e) {
+                    throw new VCS.FileSystemError();
+                }
+            });
+        } catch (IOException e) {
+            throw new VCS.FileSystemError();
+        }
+    }
+
+    public Map<Path, HashedFile> getFileDescriptions() {
+        return hashes;
     }
 }

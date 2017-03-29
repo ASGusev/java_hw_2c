@@ -1,25 +1,8 @@
 import java.io.*;
-import java.math.BigInteger;
 import java.nio.file.*;
-import java.security.DigestInputStream;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.*;
-import java.util.stream.Stream;
 
 public class VCS {
-    protected static final String REPO_DIR_NAME = ".vcs";
-    private static final String BRANCHES_DIR_NAME = "branches";
-    protected static final String COMMITS_DIR_NAME = "commits";
-    private static final String USERNAME_FILE = "user";
-    private static final String COMMITS_COUNTER_FILENAME = "commit";
-    private static final String POSITION_FILENAME = "position";
-    private static final String STAGE_DIR = "stage";
-    private static final String COMMIT_CONTENT_DIR = "content";
-    private static final String COMMIT_METADATA_FILE = "metadata";
-    private static final String COMMIT_FILES_LIST = "files_list";
-    private static final String DEFAULT_BRANCH = "master";
-
     /**
      * Initialises a repository in the current directory. A folder with all the
      * necessary information is created.
@@ -114,6 +97,80 @@ public class VCS {
     }
 
     /**
+     * Returns the directory to the condition in which it was at the moment of the
+     * specified commit.
+     * @param commitID the number of the required commit.
+     * @throws BadRepoException if the repository information folder is
+     * not in a correct condition.
+     * @throws NoSuchCommitException if a commit with the given number does
+     * not exist.
+     */
+    public static void checkoutCommit(int commitID) throws BadRepoException,
+            NoSuchCommitException {
+        Commit curCommit = Repository.getCurrentCommit();
+        curCommit.clear();
+        Commit newCommit = new Commit(commitID);
+        newCommit.checkout();
+    }
+
+    /**
+     * Removes all the files included in a commit from the working directory.
+     * @param commitList the number of the commit to be cleared.
+     */
+    private static void clearCommitted(Path commitList) {
+        try {
+            Files.readAllLines(commitList).forEach(line -> {
+                Path path = Paths.get(line.substring(0, line.indexOf(' ')));
+                try {
+                    if (Files.exists(path)) {
+                        if (Files.isDirectory(path)) {
+                            HashedDirectory.deleteDir(path);
+                        } else {
+                            Files.delete(path);
+                        }
+                    }
+                } catch (IOException e) {
+                    throw new FileSystemError();
+                }
+            });
+        } catch (IOException e) {
+            throw new FileSystemError();
+        }
+    }
+
+    /**
+     * Returns the working directory to the condition in which in was at the moment
+     * of the last commit of a branch.
+     * @param branchName the name of the required branch
+     * @throws BadRepoException if the repository information folder is
+     * not in a correct condition.
+     * @throws NoSuchBranchException if a branch with given name does not exist.
+     */
+    public static void checkoutBranch(String branchName) throws BadRepoException,
+            NoSuchBranchException {
+        Branch newBranch = Branch.getByName(branchName);
+        try {
+            checkoutCommit(newBranch.getHeadNumber());
+        } catch (NoSuchCommitException e) {
+            throw new BadRepoException();
+        }
+    }
+
+    /**
+     * Merges the specified branch into current. The changes if the merged branch
+     * have higher priority than in the current.
+     * @param branchName the name of the branch to merge
+     * @throws BadPositionException if the current position is not a branch head.
+     * @throws BadRepoException if the repository information folder is
+     * not in a correct condition.
+     * @throws NoSuchBranchException if a branch with the given name does not exist.
+     */
+    public static void merge(String branchName) throws BadPositionException,
+            BadRepoException, NoSuchBranchException {
+        Merger.merge(Branch.getByName(branchName));
+    }
+
+    /**
      * A class representing a commit object for interface.
      */
     public static class CommitDescription {
@@ -172,329 +229,6 @@ public class VCS {
         public Calendar getTime() {
             return time;
         }
-    }
-
-    /**
-     * Returns the directory to the condition in which it was at the moment of the
-     * specified commit.
-     * @param commitID the number of the required commit.
-     * @throws BadRepoException if the repository information folder is
-     * not in a correct condition.
-     * @throws NoSuchCommitException if a commit with the given number does
-     * not exist.
-     */
-    public static void checkoutCommit(int commitID) throws BadRepoException,
-            NoSuchCommitException {
-        int curCommit = getCurCommit();
-        Path curCommitList = Paths.get(REPO_DIR_NAME, COMMITS_DIR_NAME,
-                String.valueOf(curCommit), COMMIT_FILES_LIST);
-        clearCommitted(curCommitList);
-
-        Path newContent = Paths.get(REPO_DIR_NAME, COMMITS_DIR_NAME,
-                String.valueOf(commitID), COMMIT_CONTENT_DIR);
-        try {
-            Files.walk(newContent).forEach(path -> {
-                if (!path.equals(newContent)) {
-                    Path relativePath = newContent.relativize(path);
-                    try {
-                        Files.copy(path, relativePath);
-                    } catch (IOException e) {
-                        throw new FileSystemError();
-                    }
-                }
-            });
-        } catch (IOException e) {
-            throw new FileSystemError();
-        }
-
-        Path posFilePath = Paths.get(REPO_DIR_NAME, POSITION_FILENAME);
-        try {
-            String branch = getCommitBranch(commitID);
-            Files.write(posFilePath, (branch + '\n' + String.valueOf(commitID))
-                    .getBytes());
-        } catch (IOException e) {
-            e.printStackTrace();
-            throw new FileSystemError();
-        }
-    }
-
-    /**
-     * Removes all the files included in a commit from the working directory.
-     * @param commitList the number of the commit to be cleared.
-     */
-    private static void clearCommitted(Path commitList) {
-        try {
-            Files.readAllLines(commitList).forEach(line -> {
-                Path path = Paths.get(line.substring(0, line.indexOf(' ')));
-                try {
-                    if (Files.exists(path)) {
-                        if (Files.isDirectory(path)) {
-                            deleteDir(path);
-                        } else {
-                            Files.delete(path);
-                        }
-                    }
-                } catch (IOException e) {
-                    throw new FileSystemError();
-                }
-            });
-        } catch (IOException e) {
-            throw new FileSystemError();
-        }
-    }
-
-    /**
-     * Returns the working directory to the condition in which in was at the moment
-     * of the last commit of a branch.
-     * @param branchName the name of the required branch
-     * @throws BadRepoException if the repository information folder is
-     * not in a correct condition.
-     * @throws NoSuchBranchException if a branch with given name does not exist.
-     */
-    public static void checkoutBranch(String branchName) throws BadRepoException,
-            NoSuchBranchException {
-        int branchHead = getBranchHead(branchName);
-        try {
-            checkoutCommit(branchHead);
-        } catch (NoSuchCommitException e) {
-            throw new BadRepoException();
-        }
-    }
-
-    /**
-     * Merges the specified branch into current. The changes if the merged branch
-     * have higher priority than in the current.
-     * @param branchName the name of the branch to merge
-     * @throws BadPositionException if the current position is not a branch head.
-     * @throws BadRepoException if the repository information folder is
-     * not in a correct condition.
-     * @throws NoSuchBranchException if a branch with the given name does not exist.
-     */
-    public static void merge(String branchName) throws BadPositionException,
-            BadRepoException, NoSuchBranchException {
-        Integer curCommit = getCurCommit();
-        Integer mergedCommit = getBranchHead(branchName);
-        //if (curCommit != getBranchHead(getCurBranch())) {
-        //    throw new BadPositionException();
-        //}
-        if (Files.notExists(Paths.get(REPO_DIR_NAME, BRANCHES_DIR_NAME, branchName))) {
-            throw new NoSuchBranchException();
-        }
-
-        List<Integer> curCommitOrigin = getCommitOrigin(curCommit);
-        List<Integer> mergedCommitOrigin = getCommitOrigin(mergedCommit);
-
-        int i = 0;
-        while (i < curCommitOrigin.size() && i < mergedCommitOrigin.size() &&
-                curCommitOrigin.get(i).equals(mergedCommitOrigin.get(i))) {
-            i++;
-        }
-        Integer commonPredecessor = curCommitOrigin.get(i - 1);
-
-        Map<String, FileDescription> sourceFiles = getCommitFilesInfo(commonPredecessor);
-        Map<String, FileDescription> mergedFiles = getCommitFilesInfo(mergedCommit);
-        Map<String, FileDescription> curFiles = getCommitFilesInfo(curCommit);
-        Map<String, FileDescription> resFiles = new HashMap<>();
-
-        resFiles.putAll(curFiles);
-        resFiles.putAll(mergedFiles);
-
-        sourceFiles.forEach((name, desc) -> {
-            if (!curFiles.containsKey(name) || !mergedFiles.containsKey(name)) {
-                resFiles.remove(name);
-            }
-        });
-
-        clearCommitted(Paths.get(REPO_DIR_NAME, COMMITS_DIR_NAME,
-                curCommit.toString(), COMMIT_FILES_LIST));
-        resFiles.forEach((name, desc) -> {
-            Path newPath = Paths.get(REPO_DIR_NAME, name);
-            try {
-                Files.copy(desc.getPath(), newPath);
-                addFile(name);
-            } catch (BadRepoException | NoSuchFileException | IOException e) {
-                throw new FileSystemError();
-            }
-        });
-        commit("Branch " + branchName + " merged");
-    }
-
-    private static class FileDescription {
-        private String hash;
-        private Path path;
-
-        FileDescription(String hash, Path path) {
-            this.hash = hash;
-            this.path = path;
-        }
-
-        public String getHash() {
-            return hash;
-        }
-
-        public Path getPath() {
-            return path;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            return obj instanceof FileDescription &&
-                    hash.equals(((FileDescription)obj).hash);
-        }
-    }
-
-    /**
-     * Gets a pedigree of the specified commit from the repository initialisation.
-     */
-    private static List<Integer> getCommitOrigin(Integer commitID) throws
-            BadRepoException {
-        ArrayList<Integer> origin = new ArrayList<>();
-        Integer pos = commitID;
-        while (!pos.equals(0)) {
-            origin.add(pos);
-            pos = getCommitParent(pos);
-        }
-        origin.add(0);
-        Collections.reverse(origin);
-        return origin;
-    }
-
-    /**
-     * Gets the position of the head before the specified commit.
-     */
-    private static Integer getCommitParent(Integer commitID) throws
-            BadRepoException {
-        Path commitDescription = Paths.get(REPO_DIR_NAME, COMMITS_DIR_NAME,
-                commitID.toString(), COMMIT_METADATA_FILE);
-        if (Files.notExists(commitDescription)) {
-            throw new BadRepoException();
-        }
-
-        Integer parent;
-        try (Scanner descriptionScanner = new Scanner(commitDescription)) {
-            descriptionScanner.next();
-            descriptionScanner.next();
-            parent = descriptionScanner.nextInt();
-        } catch (IOException e) {
-            throw new FileSystemError();
-        }
-        return parent;
-    }
-
-    /**
-     * Gets a map from file name to its properties.
-     */
-    private static Map<String, FileDescription> getCommitFilesInfo(Integer commitID)
-            throws BadRepoException {
-        Path filesListPath = Paths.get(REPO_DIR_NAME, COMMITS_DIR_NAME,
-                commitID.toString(), COMMIT_FILES_LIST);
-        Path contentDir = Paths.get(REPO_DIR_NAME, COMMITS_DIR_NAME,
-                commitID.toString(), COMMIT_CONTENT_DIR);
-
-        if (Files.notExists(filesListPath) || Files.notExists(contentDir)) {
-            throw new BadRepoException();
-        }
-        Map<String, FileDescription> files = new HashMap<>();
-        try {
-            Files.lines(filesListPath).forEach(line -> {
-                String[] info = line.split(" ");
-                files.put(info[0], new FileDescription(info[1],
-                        contentDir.resolve(info[0])));
-            });
-        } catch (IOException e) {
-            throw new FileSystemError();
-        }
-        return files;
-    }
-
-    private static void deleteDir(Path dir) throws IOException {
-        wipeDir(dir);
-        Files.delete(dir);
-    }
-
-    private static void wipeDir(Path dir) throws IOException {
-        Stream<Path> content = Files.list(dir);
-        content.forEach(path -> {
-            try {
-                if (Files.isDirectory(path)) {
-                    deleteDir(path);
-                } else {
-                    Files.delete(path);
-                }
-            } catch (IOException e) {
-                throw new VCS.FileSystemError();
-            }
-        });
-        content.close();
-    }
-
-    private static int getCommitsNumber() throws BadRepoException, IOException {
-        List<String> lines = Files.readAllLines(
-                Paths.get(REPO_DIR_NAME, COMMITS_COUNTER_FILENAME));
-        if (lines.size() != 1) {
-            throw new BadRepoException();
-        }
-        int commitsNumber;
-        try {
-            commitsNumber = Integer.valueOf(lines.get(0));
-        } catch (NumberFormatException e) {
-            throw new BadRepoException();
-        }
-        return commitsNumber;
-    }
-
-    public static String getUserName() throws IOException {
-        BufferedReader reader = new BufferedReader(
-                new FileReader(Paths.get(REPO_DIR_NAME, USERNAME_FILE).toString()));
-        String username = reader.readLine();
-        reader.close();
-        return username;
-    }
-
-    private static String getFileHash(String filePath) {
-        DigestInputStream stream;
-        byte[] hash = null;
-        try (FileInputStream fin = new FileInputStream(filePath)) {
-            MessageDigest messageDigest = MessageDigest.getInstance("SHA-1");
-            stream = new DigestInputStream(fin, messageDigest);
-            while (stream.read() != -1) {}
-            hash = messageDigest.digest();
-        } catch (IOException e) {
-            throw new FileSystemError();
-        } catch (NoSuchAlgorithmException e) {}
-        return new BigInteger(1, hash).toString();
-    }
-
-    private static int getBranchHead(String branchName) throws BadRepoException,
-            NoSuchBranchException {
-        Path branchPath = Paths.get(REPO_DIR_NAME, BRANCHES_DIR_NAME, branchName);
-        if (Files.notExists(Paths.get(REPO_DIR_NAME, BRANCHES_DIR_NAME))) {
-            throw new BadRepoException();
-        }
-        if (Files.notExists(branchPath)) {
-            throw new NoSuchBranchException();
-        }
-
-        String number = null;
-        try (Scanner scanner = new Scanner(branchPath)) {
-            while (scanner.hasNext()) {
-                number = scanner.next();
-            }
-        } catch (IOException e) {
-            throw new FileSystemError();
-        }
-        return Integer.valueOf(number);
-    }
-
-    private static String getCommitBranch(int commit) throws IOException {
-        String branch;
-        Path metadataPath = Paths.get(REPO_DIR_NAME, COMMITS_DIR_NAME,
-                String.valueOf(commit), COMMIT_METADATA_FILE);
-        Scanner scanner = new Scanner(metadataPath);
-        scanner.next();
-        branch = scanner.next();
-        scanner.close();
-        return branch;
     }
 
     /**
