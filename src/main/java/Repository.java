@@ -6,6 +6,9 @@ import java.nio.file.*;
 import java.util.List;
 import java.util.Scanner;
 
+/**
+ * A class with methods for operating with the repository.
+ */
 public abstract class Repository {
     protected static final String REPO_DIR_NAME = ".vcs";
     protected static final String BRANCHES_DIR_NAME = "branches";
@@ -18,6 +21,12 @@ public abstract class Repository {
     protected static final String WORKING_DIR_HASHES = "hashes";
     private static HashedDirectory workingDirectory;
 
+    /**
+     * Initialises a repository in the current directory. A folder with all the
+     * necessary information is created.
+     * @param author the first username for the created repo
+     * @throws VCS.RepoAlreadyExistsException if a repo is already initialised in current folder
+     */
     protected static void create(String author) throws VCS.RepoAlreadyExistsException {
         if (Files.exists(Paths.get(Repository.REPO_DIR_NAME), LinkOption.NOFOLLOW_LINKS)) {
             throw new VCS.RepoAlreadyExistsException();
@@ -58,6 +67,11 @@ public abstract class Repository {
         }
     }
 
+    /**
+     * Get the number of commits in the repository.
+     * @return the number of commits in the repository.
+     * @throws VCS.BadRepoException if the repository folder is corrupt.
+     */
     protected static int getCommitsNumber() throws VCS.BadRepoException {
         List<String> lines;
         int commitsNumber;
@@ -77,6 +91,11 @@ public abstract class Repository {
         return commitsNumber;
     }
 
+    /**
+     * Gets current branch.
+     * @return a Branch object representing the current branch.
+     * @throws VCS.BadRepoException if the repository folder is corrupt.
+     */
     protected static Branch getCurBranch() throws VCS.BadRepoException {
         String curBranchName;
         Path posFilePath = Paths.get(REPO_DIR_NAME, POSITION_FILENAME);
@@ -89,9 +108,18 @@ public abstract class Repository {
         } catch (IOException e) {
             throw new VCS.FileSystemError();
         }
-        return Branch.getByName(curBranchName);
+        try {
+            return Branch.getByName(curBranchName);
+        } catch (VCS.NoSuchBranchException e) {
+            throw new VCS.BadRepoException();
+        }
     }
 
+    /**
+     * Gets the name of the current user.
+     * @return username.
+     * @throws VCS.BadRepoException if the repository folder is corrupt.
+     */
     protected static String getUserName() throws VCS.BadRepoException {
         String username;
         try {
@@ -108,6 +136,11 @@ public abstract class Repository {
         return username;
     }
 
+    /**
+     * Sets updates current user's name.
+     * @param name new user name.
+     * @throws VCS.BadRepoException if the repository folder is corrupt.
+     */
     protected static void setUserName(String name) throws VCS.BadRepoException {
         if (!Files.exists(Paths.get(REPO_DIR_NAME, USERNAME_FILE))) {
             throw new VCS.BadRepoException();
@@ -120,6 +153,11 @@ public abstract class Repository {
         }
     }
 
+    /**
+     * Gets the number of the current head.
+     * @return the number of the currently heading commit.
+     * @throws VCS.BadRepoException if the repository folder is corrupt.
+     */
     protected static Integer getCurrentCommitNumber() throws VCS.BadRepoException {
         int curCommit;
         Path posFilePath = Paths.get(REPO_DIR_NAME, POSITION_FILENAME);
@@ -136,6 +174,11 @@ public abstract class Repository {
         return curCommit;
     }
 
+    /**
+     * Gets current commit.
+     * @return a Commit object representing the currently heading commit.
+     * @throws VCS.BadRepoException if the repository folder is corrupt.
+     */
     protected static Commit getCurrentCommit() throws VCS.BadRepoException {
         try {
             return new Commit(getCurrentCommitNumber());
@@ -144,6 +187,10 @@ public abstract class Repository {
         }
     }
 
+    /**
+     * Updates the current branch.
+     * @param branch new current branch.
+     */
     protected static void setCurrentBranch(Branch branch) {
         Path posPath = Paths.get(REPO_DIR_NAME, POSITION_FILENAME);
         try {
@@ -154,6 +201,11 @@ public abstract class Repository {
         }
     }
 
+    /**
+     * Updates current commit.
+     * @param commit the new current commit.
+     * @throws VCS.BadRepoException if the repository folder is corrupt.
+     */
     protected static void setCurrentCommit(Commit commit) throws VCS.BadRepoException {
         Path posPath = Paths.get(REPO_DIR_NAME, POSITION_FILENAME);
         if (Files.notExists(posPath)) {
@@ -167,6 +219,11 @@ public abstract class Repository {
         }
     }
 
+    /**
+     * Sets the commit counter into given value.
+     * @param val new commit counter value.
+     * @throws VCS.BadRepoException if the repository folder is corrupt.
+     */
     protected static void updateCommitCounter(Integer val) throws VCS.BadRepoException {
         Path counterPath = Paths.get(REPO_DIR_NAME, COMMITS_COUNTER_FILENAME);
         if (Files.notExists(counterPath)) {
@@ -179,6 +236,10 @@ public abstract class Repository {
         }
     }
 
+    /**
+     * Gets the working directory as a HashedDirectory object.
+     * @return a HashedDirectory object representing the working directory.
+     */
     protected static HashedDirectory getWorkingDirectory() {
         if (workingDirectory == null) {
             workingDirectory = new HashedDirectory(Paths.get("."),
@@ -187,6 +248,13 @@ public abstract class Repository {
         return workingDirectory;
     }
 
+    /**
+     * Checks out a supplied commit. The working directory is returned to the
+     * condition of that commit.
+     * @param commitID the number of the commit too checkout.
+     * @throws VCS.BadRepoException if the repository folder is corrupt.
+     * @throws VCS.NoSuchCommitException if the requested commit does not exist.
+     */
     protected static void checkoutCommit(Integer commitID) throws
             VCS.BadRepoException, VCS.NoSuchCommitException {
         Commit curCommit = Repository.getCurrentCommit();

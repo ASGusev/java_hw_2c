@@ -7,16 +7,30 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.stream.Collectors;
 
+/**
+ * A class representing a branch in the repository.
+ */
 public class Branch {
     private final String name;
     private final Path commitsListPath;
 
-    private Branch(String name) {
+    private Branch(String name) throws VCS.NoSuchBranchException {
         this.name = name;
         commitsListPath = Paths.get(Repository.REPO_DIR_NAME,
                 Repository.BRANCHES_DIR_NAME, name);
+        if (Files.notExists(commitsListPath)) {
+            throw new VCS.NoSuchBranchException();
+        }
     }
 
+    /**
+     * Creates a new branch in the repository.
+     * @param name the name for the new branch.
+     * @return an object representing the new branch.
+     * @throws VCS.BranchAlreadyExistsException if a branch with the given
+     * name already exists in the repository.
+     * @throws VCS.BadRepoException if the repository folder is corrupt.
+     */
     protected static Branch create(String name) throws VCS.BranchAlreadyExistsException,
             VCS.BadRepoException {
         Path descPath = Paths.get(Repository.REPO_DIR_NAME,
@@ -30,10 +44,20 @@ public class Branch {
         } catch (IOException e) {
             throw new VCS.FileSystemError();
         }
-        return new Branch(name);
+        try {
+            return new Branch(name);
+        } catch (VCS.NoSuchBranchException e) {
+            throw new VCS.BadRepoException();
+        }
     }
 
-    protected static Branch getByName(String name) {
+    /**
+     * Reads an existing branch from the repo.
+     * @param name the name of the branch to get
+     * @return an object representing the requested branch.
+     * @throws VCS.NoSuchBranchException if the requested branch does not exist.
+     */
+    protected static Branch getByName(String name) throws VCS.NoSuchBranchException {
         return new Branch(name);
     }
 
@@ -41,6 +65,10 @@ public class Branch {
         return name;
     }
 
+    /**
+     * Adds a commit to the end of the branch.
+     * @param newCommit a commit to add.
+     */
     protected void addCommit(Commit newCommit) {
         try {
             Files.write(commitsListPath, (newCommit.getNumber().toString() + '\n')
@@ -50,6 +78,11 @@ public class Branch {
         }
     }
 
+    /**
+     * Gets the number of hte last commit in the branch.
+     * @return the number of hte last commit in the branch.
+     * @throws VCS.BadRepoException if the repository folder is corrupt.
+     */
     protected Integer getHeadNumber() throws VCS.BadRepoException {
         String headNumber = "-1";
         try (Scanner scanner = new Scanner(commitsListPath)) {
@@ -66,6 +99,11 @@ public class Branch {
         }
     }
 
+    /**
+     * Gets the branch's head commit.
+     * @return a Commit object representing the branch's head commit.
+     * @throws VCS.BadRepoException if the repository folder is corrupt.
+     */
     protected Commit getHead() throws VCS.BadRepoException {
         try {
             return new Commit(getHeadNumber());
@@ -74,6 +112,11 @@ public class Branch {
         }
     }
 
+    /**
+     * Makes a log of commits in the branch.
+     * @return a list with descriptions of all commits of the branch.
+     * @throws VCS.BadRepoException if the repository folder is corrupt.
+     */
     protected List<VCS.CommitDescription> getLog() throws VCS.BadRepoException {
         List<VCS.CommitDescription> commitList;
         try {
@@ -93,6 +136,14 @@ public class Branch {
         return commitList;
     }
 
+    /**
+     * Deletes the branch from the repository. Deleting the master branch is
+     * impossible.
+     * @throws VCS.BadRepoException if the repository folder is corrupt.
+     * @throws VCS.BadPositionException in case of an attempt to remove the current
+     * branch.
+     * @throws IllegalArgumentException in case of attempt to delete the master branch.
+     */
     void delete() throws VCS.BadRepoException, VCS.BadPositionException {
         if (name.equals(Repository.DEFAULT_BRANCH)) {
             throw new UnsupportedOperationException();

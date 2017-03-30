@@ -30,7 +30,7 @@ public class RepositoryTest {
                     Files.readAllLines(repoPath.resolve(Repository.COMMITS_COUNTER_FILENAME)),
                     Collections.singletonList("1"));
 
-            Assert.assertEquals(Arrays.asList("master", "1"),
+            Assert.assertEquals(Arrays.asList("master", "0"),
                     Files.readAllLines(repoPath.resolve(Repository.POSITION_FILENAME)));
         } finally {
             HashedDirectory.deleteDir(Paths.get(Repository.REPO_DIR_NAME));

@@ -33,7 +33,8 @@ public class BranchTest {
 
     @Test
     public void commitAdditionTest() throws VCS.RepoAlreadyExistsException,
-            VCS.BadPositionException, VCS.BadRepoException, IOException {
+            VCS.BadPositionException, VCS.BadRepoException, IOException,
+            VCS.NoSuchBranchException {
         try {
             Repository.create("usr");
             Branch masterBranch = Branch.getByName(Repository.DEFAULT_BRANCH);

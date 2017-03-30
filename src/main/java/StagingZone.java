@@ -1,6 +1,10 @@
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+/**
+ * A class representing the Staging zone. The function of the staging zone is
+ * determining which files should be included in the next commit.
+ */
 public abstract class StagingZone {
     protected static final String STAGE_LIST = "stage_list";
     private static final Path STAGE_PATH =
@@ -10,11 +14,21 @@ public abstract class StagingZone {
     private static final HashedDirectory STAGE_DIR =
             new HashedDirectory(STAGE_PATH, LIST_PATH);
 
+    /**
+     * Adds a file to the staging directory, including it into the next commit.
+     * @param filePath the path to the file to add.
+     * @throws VCS.NoSuchFileException if the supplied path does not lead to a
+     * correct file.
+     */
     protected static void addFile(Path filePath) throws VCS.NoSuchFileException {
         STAGE_DIR.addFile(Paths.get("."), filePath);
         STAGE_DIR.flushHashes();
     }
 
+    /**
+     * Gets the stage directory.
+     * @return a HashedDirectory object representing the directory with staged files.
+     */
     protected static HashedDirectory getDir() {
         return STAGE_DIR;
     }

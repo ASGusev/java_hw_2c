@@ -3,7 +3,6 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
@@ -13,7 +12,8 @@ import java.util.Scanner;
 public class CommitTest {
     @Test
     public void creationTest() throws IOException, VCS.RepoAlreadyExistsException,
-            VCS.NoSuchFileException, VCS.BadRepoException, VCS.BadPositionException {
+            VCS.NoSuchFileException, VCS.NoSuchBranchException, VCS.BadRepoException,
+            VCS.BadPositionException {
         final String USERNAME = "user";
         final String TEST_CONTENT = "foo";
         final String TEST_FILE_NAME = "foo";

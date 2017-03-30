@@ -6,6 +6,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
+/**
+ * A class representing a commit in the repository.
+ */
 public class Commit {
     protected static final String COMMIT_CONTENT_DIR = "content";
     protected static final String COMMIT_METADATA_FILE = "metadata";
@@ -47,6 +50,13 @@ public class Commit {
     private final Integer father;
     private final Path rootDir;
 
+    /**
+     * Creates a new commit in the repository with given message in the current
+     * branch and sets it as the global head.
+     * @param message the commit message.
+     * @throws VCS.BadRepoException if the repository folder is corrupt.
+     * @throws VCS.BadPositionException if current commit is not the head of its branch.
+     */
     protected Commit(String message) throws VCS.BadRepoException,
             VCS.BadPositionException {
         if (Files.notExists(Paths.get(Repository.REPO_DIR_NAME,
@@ -97,6 +107,13 @@ public class Commit {
         }
     }
 
+    /**
+     * Reads an already existing commit from the repository.
+     * @param number the number of commit to be read.
+     * @throws VCS.NoSuchCommitException if a commit with the given number does not
+     * exist.
+     * @throws VCS.BadRepoException if the repository data folder is corrupt.
+     */
     protected Commit(Integer number) throws VCS.NoSuchCommitException,
             VCS.BadRepoException {
         this.number = number;
@@ -123,9 +140,14 @@ public class Commit {
             message = messageBuilder.toString();
         } catch (IOException e) {
             throw new VCS.FileSystemError();
+        } catch (VCS.NoSuchBranchException e) {
+            throw new VCS.BadRepoException();
         }
     }
 
+    /**
+     * Removes all the commit's files from the working directory.
+     */
     protected void clear() {
         Path contentDir = rootDir.resolve(COMMIT_CONTENT_DIR);
         try {
@@ -153,7 +175,11 @@ public class Commit {
         }
     }
 
-
+    /**
+     * Copies all the files from the commit to the working directory and sets
+     * this commit as global head.
+     * @throws VCS.BadRepoException if the repository folder is corrupt.
+     */
     protected void checkout() throws VCS.BadRepoException {
         Path contentDir = rootDir.resolve(COMMIT_CONTENT_DIR);
         HashedDirectory contentDirectory = new HashedDirectory(contentDir,
@@ -169,6 +195,12 @@ public class Commit {
         Repository.setCurrentCommit(this);
     }
 
+    /**
+     * Restores the history between the initial commit and the current one.
+     * @return a list containing all current commit's predessors sorted by
+     * creation time.
+     * @throws VCS.BadRepoException if the repository folder is corrupt.
+     */
     protected List<Commit> getPedigree() throws VCS.BadRepoException {
         ArrayList<Commit> pedigree = new ArrayList<>();
         pedigree.add(this);
@@ -186,6 +218,11 @@ public class Commit {
         return o instanceof Commit && ((Commit)o).number.equals(this.number);
     }
 
+    /**
+     * Gets a mapping from file path in commit to its hash and path from the
+     * working directory.
+     * @return a Map from file path to its description.
+     */
     public Map<Path, HashedFile> getFileDescriptions() {
         return new HashedDirectory(rootDir.resolve(COMMIT_CONTENT_DIR),
                 rootDir.resolve(COMMIT_FILES_LIST)).getFileDescriptions();

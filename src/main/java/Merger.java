@@ -3,7 +3,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * The module for merging commits.
+ */
 public abstract class Merger {
+    /**
+     * Merges the supplied branch into current.
+     * @param branchToMerge the branch to merge into current.
+     * @throws VCS.BadRepoException if the repository folder is corrupt.
+     * @throws VCS.BadPositionException if the current position is not a head of a
+     * branch.
+     */
     protected static void merge(Branch branchToMerge) throws VCS.BadRepoException,
             VCS.BadPositionException{
         Commit curCommit = Repository.getCurrentCommit();

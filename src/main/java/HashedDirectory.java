@@ -6,11 +6,20 @@ import java.nio.file.StandardCopyOption;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/**
+ * A class maintaining a folder where hashes are calculated for all files.
+ */
 public class HashedDirectory {
     private final Path dir;
     private final Path hashesPath;
     private Map<Path, HashedFile> hashes;
 
+    /**
+     * Creates a HashedDirectory object with supplied directory and supplied file
+     * with hashes.
+     * @param dir the path to the directory.
+     * @param hashesPath the path to the file with hashes.
+     */
     protected HashedDirectory(Path dir, Path hashesPath) {
         this.dir = dir;
         this.hashesPath = hashesPath;
@@ -30,6 +39,10 @@ public class HashedDirectory {
         }
     }
 
+    /**
+     * Removes all the files from the given directory.
+     * @throws IOException if a deletion error occurs.
+     */
     protected static void wipeDir(File dir) throws IOException {
         for (File file: dir.listFiles()) {
             if (file.isDirectory()) {
@@ -39,15 +52,32 @@ public class HashedDirectory {
         }
     }
 
+    /**
+     * Recursively deletes the given folder.
+     * @param dir the directory to delete.
+     * @throws IOException if a deletion error occurs.
+     */
     protected static void deleteDir(Path dir) throws IOException {
         wipeDir(dir.toFile());
         Files.delete(dir);
     }
 
+    /**
+     * Recursively deletes the given folder.
+     * @param dir the path to the directory to delete.
+     * @throws IOException if a deletion error occurs.
+     */
     protected static void deleteDir(String dir) throws IOException {
         deleteDir(Paths.get(dir));
     }
 
+    /**
+     * Copies a file to the directory.
+     * @param dirPath the path to a working dir containing file.
+     * @param filePath the resting path from the working dir to the file to copy.
+     * @throws VCS.NoSuchFileException in case the provided path does not lead to a
+     * valid file.
+     */
     void addFile(Path dirPath, Path filePath) throws VCS.NoSuchFileException {
         try {
             if (!Files.isRegularFile(filePath)) {
@@ -65,6 +95,10 @@ public class HashedDirectory {
         }
     }
 
+    /**
+     * Copies the provided directory content into the current folder.
+     * @param src the directory to be copied.
+     */
     protected void cloneDirectory(HashedDirectory src) {
         try {
             hashes.putAll(src.hashes);
@@ -82,6 +116,9 @@ public class HashedDirectory {
         }
     }
 
+    /**
+     * Writes the file hashes to the hashes file.
+     */
     protected void flushHashes() {
         try {
             BufferedWriter hashWriter = new BufferedWriter(
@@ -99,6 +136,10 @@ public class HashedDirectory {
         }
     }
 
+    /**
+     * Gets a map with file descriptions.
+     * @return a Map from file path in the directory to its hash and absolute path.
+     */
     public Map<Path, HashedFile> getFileDescriptions() {
         return hashes;
     }

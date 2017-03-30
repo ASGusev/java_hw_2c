@@ -6,20 +6,37 @@ import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+/**
+ * A class representing a file with calculated hash.
+ */
 class HashedFile {
     private final String hash;
     private final Path path;
 
+    /**
+     * Creates an object from file path an already calculated hash.
+     * @param path path to file.
+     * @param hash hash of file.
+     */
     HashedFile(Path path, String hash) {
         this.hash = hash;
         this.path = path;
     }
 
+    /**
+     * Creates an object calculating hash.
+     * @param path path to the file.
+     */
     HashedFile(Path path) {
         this.path = path;
         hash = calcFileHash(path.toString());
     }
 
+    /**
+     * Calculates SHA-1 hash of the file.
+     * @param filePath path to the file to calculate hash.
+     * @return SHA-1 hash of the provided file.
+     */
     protected static String calcFileHash(String filePath) {
         DigestInputStream stream;
         byte[] hash = null;
@@ -34,10 +51,18 @@ class HashedFile {
         return new BigInteger(1, hash).toString();
     }
 
+    /**
+     * Gets hash of the file.
+     * @return the hash of the file.
+     */
     public String getHash() {
         return hash;
     }
 
+    /**
+     * Gets the path to the file.
+     * @return the path to the file.
+     */
     public Path getPath() {
         return path;
     }
@@ -47,6 +72,4 @@ class HashedFile {
         return obj instanceof HashedFile &&
                 hash.equals(((HashedFile) obj).hash);
     }
-
-
 }
