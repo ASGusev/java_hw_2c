@@ -44,6 +44,10 @@ public class HashedDirectory {
         Files.delete(dir);
     }
 
+    protected static void deleteDir(String dir) throws IOException {
+        deleteDir(Paths.get(dir));
+    }
+
     void addFile(Path dirPath, Path filePath) throws VCS.NoSuchFileException {
         try {
             if (!Files.isRegularFile(filePath)) {
@@ -85,11 +89,12 @@ public class HashedDirectory {
                     new FileWriter(hashesPath.toString()));
             hashes.forEach((path, s) -> {
                 try {
-                    hashWriter.write(path.toString() + ' ' + s + '\n');
+                    hashWriter.write(path.toString() + ' ' + s.getHash() + '\n');
                 } catch (IOException e) {
                     throw new VCS.FileSystemError();
                 }
             });
+            hashWriter.close();
         } catch (IOException e) {
             throw new VCS.FileSystemError();
         }

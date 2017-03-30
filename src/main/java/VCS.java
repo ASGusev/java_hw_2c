@@ -2,6 +2,9 @@ import java.io.*;
 import java.nio.file.*;
 import java.util.*;
 
+/**
+ * An class with public methods providing the VCS with an interface.
+ */
 public class VCS {
     /**
      * Initialises a repository in the current directory. A folder with all the
@@ -111,31 +114,6 @@ public class VCS {
         curCommit.clear();
         Commit newCommit = new Commit(commitID);
         newCommit.checkout();
-    }
-
-    /**
-     * Removes all the files included in a commit from the working directory.
-     * @param commitList the number of the commit to be cleared.
-     */
-    private static void clearCommitted(Path commitList) {
-        try {
-            Files.readAllLines(commitList).forEach(line -> {
-                Path path = Paths.get(line.substring(0, line.indexOf(' ')));
-                try {
-                    if (Files.exists(path)) {
-                        if (Files.isDirectory(path)) {
-                            HashedDirectory.deleteDir(path);
-                        } else {
-                            Files.delete(path);
-                        }
-                    }
-                } catch (IOException e) {
-                    throw new FileSystemError();
-                }
-            });
-        } catch (IOException e) {
-            throw new FileSystemError();
-        }
     }
 
     /**

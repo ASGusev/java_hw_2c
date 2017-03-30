@@ -41,10 +41,10 @@ public class Branch {
         return name;
     }
 
-    protected void addCommit(Integer commitNumber) {
+    protected void addCommit(Commit newCommit) {
         try {
-            Files.write(commitsListPath, (commitNumber.toString() + '\n').getBytes(),
-                    StandardOpenOption.APPEND);
+            Files.write(commitsListPath, (newCommit.getNumber().toString() + '\n')
+                            .getBytes(), StandardOpenOption.APPEND);
         } catch (IOException e) {
             throw new VCS.FileSystemError();
         }
@@ -111,6 +111,9 @@ public class Branch {
                     throw new VCS.FileSystemError();
                 }
             });
+            Path record = Paths.get(Repository.REPO_DIR_NAME,
+                    Repository.BRANCHES_DIR_NAME, name);
+            Files.delete(record);
         } catch (IOException e){
             throw new VCS.FileSystemError();
         }

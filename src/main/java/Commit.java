@@ -54,7 +54,7 @@ public class Commit {
             throw new VCS.BadRepoException();
         }
 
-        number = Repository.getCommitsNumber() + 1;
+        number = Repository.getCommitsNumber();
         rootDir = Paths.get(Repository.REPO_DIR_NAME, Repository.COMMITS_DIR_NAME,
                 number.toString());
         creationTime = System.currentTimeMillis();
@@ -85,9 +85,9 @@ public class Commit {
             contentDir.cloneDirectory(StagingZone.getDir());
             contentDir.flushHashes();
 
-            branch.addCommit(number);
+            branch.addCommit(this);
             Repository.setCurrentCommit(this);
-            Repository.updateCommitCounter(number);
+            Repository.updateCommitCounter(number + 1);
         } catch (IOException | VCS.FileSystemError e) {
             e.printStackTrace();
             try {
