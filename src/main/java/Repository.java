@@ -186,4 +186,12 @@ public abstract class Repository {
         }
         return workingDirectory;
     }
+
+    protected static void checkoutCommit(Integer commitID) throws
+            VCS.BadRepoException, VCS.NoSuchCommitException {
+        Commit curCommit = Repository.getCurrentCommit();
+        curCommit.clear();
+        Commit newCommit = new Commit(commitID);
+        newCommit.checkout();
+    }
 }

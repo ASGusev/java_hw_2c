@@ -139,10 +139,11 @@ public class Commit {
                         }
                     });
             Files.walk(contentDir)
-                    .filter(Files::isDirectory)
                     .forEach(path -> {
                         try {
-                            Files.delete(contentDir.relativize(path));
+                            if (Files.isDirectory(path) && !path.equals(contentDir)) {
+                                HashedDirectory.deleteDir(contentDir.relativize(path));
+                            }
                         } catch (IOException e) {
                             throw new VCS.FileSystemError();
                         }
@@ -154,7 +155,7 @@ public class Commit {
 
 
     protected void checkout() throws VCS.BadRepoException {
-        Path contentDir = rootDir.resolve(number.toString());
+        Path contentDir = rootDir.resolve(COMMIT_CONTENT_DIR);
         HashedDirectory contentDirectory = new HashedDirectory(contentDir,
                 rootDir.resolve(COMMIT_FILES_LIST));
 

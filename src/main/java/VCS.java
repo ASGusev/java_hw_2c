@@ -1,9 +1,8 @@
-import java.io.*;
 import java.nio.file.*;
 import java.util.*;
 
 /**
- * An class with public methods providing the VCS with an interface.
+ * An class containing VCS public API methods.
  */
 public class VCS {
     /**
@@ -110,10 +109,7 @@ public class VCS {
      */
     public static void checkoutCommit(int commitID) throws BadRepoException,
             NoSuchCommitException {
-        Commit curCommit = Repository.getCurrentCommit();
-        curCommit.clear();
-        Commit newCommit = new Commit(commitID);
-        newCommit.checkout();
+        Repository.checkoutCommit(commitID);
     }
 
     /**
@@ -128,7 +124,7 @@ public class VCS {
             NoSuchBranchException {
         Branch newBranch = Branch.getByName(branchName);
         try {
-            checkoutCommit(newBranch.getHeadNumber());
+            Repository.checkoutCommit(newBranch.getHeadNumber());
         } catch (NoSuchCommitException e) {
             throw new BadRepoException();
         }

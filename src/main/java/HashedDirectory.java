@@ -68,13 +68,12 @@ public class HashedDirectory {
     protected void cloneDirectory(HashedDirectory src) {
         try {
             hashes.putAll(src.hashes);
-            Files.walk(src.dir).forEach(srcPath -> {
+            Files.walk(src.dir).filter(Files::isRegularFile).forEach(srcPath -> {
                 try {
                     Path targetPath = dir.resolve(src.dir.relativize(srcPath));
                     Files.createDirectories(targetPath.getParent());
                     Files.copy(srcPath, targetPath, StandardCopyOption.REPLACE_EXISTING);
                 } catch (IOException e) {
-                    e.printStackTrace();
                     throw new VCS.FileSystemError();
                 }
             });
