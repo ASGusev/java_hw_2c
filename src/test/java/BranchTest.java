@@ -15,13 +15,13 @@ public class BranchTest {
         final String BRANCH_NAME = "br";
         VCS.createRepo("usr");
         try {
-            Branch.create(BRANCH_NAME);
+            Branch created = Branch.create(BRANCH_NAME);
             Path branchDescPath = Paths.get(Repository.REPO_DIR_NAME,
                     Repository.BRANCHES_DIR_NAME, BRANCH_NAME);
             Assert.assertTrue("Branch creation failure",
                     Files.exists(branchDescPath));
-            Branch created = Branch.getByName(BRANCH_NAME);
 
+            Repository.setCurrentBranch(Branch.getByName(Repository.DEFAULT_BRANCH));
             created.delete();
             Assert.assertTrue("Branch deletion failure",
                     Files.notExists(branchDescPath));

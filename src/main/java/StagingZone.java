@@ -34,11 +34,18 @@ public abstract class StagingZone {
         return STAGE_HASH_DIR;
     }
 
+    /**
+     * Removes all staged files from the staging zone.
+     */
     protected static void wipe() {
         STAGE_HASH_DIR.clear();
         STAGE_HASH_DIR.flushHashes();
     }
 
+    /**
+     * Copies all files from the given directory to the staging zone.
+     * @param dir the directory which contains files to be staged.
+     */
     protected static void cloneDir(HashedDirectory dir) {
         wipe();
         STAGE_HASH_DIR.cloneDirectory(dir);

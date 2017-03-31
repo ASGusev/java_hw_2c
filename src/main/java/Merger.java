@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * The module for merging commits.
+ * A module for merging commits.
  */
 public abstract class Merger {
     /**
@@ -14,7 +14,7 @@ public abstract class Merger {
      * @throws VCS.BadPositionException if the current position is not a head of a
      * branch.
      */
-    protected static void merge(Branch branchToMerge) throws VCS.BadRepoException,
+    protected static Commit merge(Branch branchToMerge) throws VCS.BadRepoException,
             VCS.BadPositionException{
         Commit curCommit = Repository.getCurrentCommit();
         Commit commitToMerge = branchToMerge.getHead();
@@ -38,8 +38,18 @@ public abstract class Merger {
         Map<Path, HashedFile> curFiles = curCommit.getFileDescriptions();
         Map<Path, HashedFile> resFiles = new HashMap<>();
 
-        resFiles.putAll(curFiles);
-        resFiles.putAll(mergedFiles);
+        resFiles.putAll(sourceFiles);
+        curFiles.forEach((path, hashedFile) -> {
+            if (!sourceFiles.containsKey(path) || !hashedFile.equals(sourceFiles.get(path))) {
+                resFiles.put(path, hashedFile);
+            }
+        });
+
+        mergedFiles.forEach((path, hashedFile) -> {
+            if (!sourceFiles.containsKey(path) || !hashedFile.equals(sourceFiles.get(path))) {
+                resFiles.put(path, hashedFile);
+            }
+        });
 
         sourceFiles.forEach((name, desc) -> {
             if (!curFiles.containsKey(name) || !mergedFiles.containsKey(name)) {
@@ -49,15 +59,16 @@ public abstract class Merger {
 
         HashedDirectory stageDir = StagingZone.getDir();
         resFiles.forEach((path, desc) -> {
+            System.out.println(desc.getDir().toString() + ' ' + desc.getPath().toString());
             try {
-                Path realPath = desc.getPath();
-                Path dirPath = realPath.subpath(0, realPath.getNameCount() -
-                        path.getNameCount());
-                stageDir.addFile(dirPath, path);
+                stageDir.addFile(desc.getDir(), path);
             } catch (VCS.NoSuchFileException e) {
                 throw new VCS.FileSystemError();
             }
         });
-        new Commit("Branch " + branchToMerge.getName() + " merged.");
+        stageDir.flushHashes();
+        Commit mergedCommit = new Commit("Branch " + branchToMerge.getName() + " merged.");
+        mergedCommit.checkout();
+        return mergedCommit;
     }
 }

@@ -45,7 +45,9 @@ public class Branch {
             throw new VCS.FileSystemError();
         }
         try {
-            return new Branch(name);
+            Branch newBranch = new Branch(name);
+            Repository.setCurrentBranch(newBranch);
+            return newBranch;
         } catch (VCS.NoSuchBranchException e) {
             throw new VCS.BadRepoException();
         }
@@ -170,6 +172,13 @@ public class Branch {
         }
     }
 
+    /**
+     * Compares this object with another Branch object. Two Branch objects are considered
+     * equal if their names coincide.
+     * @param o object to compare with.
+     * @return true if the given object is an equal Branch object, false if is is not equal
+     * or is not a Branch object.
+     */
     @Override
     public boolean equals(Object o) {
         return o instanceof Branch && ((Branch)o).name.equals(this.name);

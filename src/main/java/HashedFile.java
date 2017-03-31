@@ -2,6 +2,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -12,23 +13,28 @@ import java.security.NoSuchAlgorithmException;
 public class HashedFile {
     private final String hash;
     private final Path path;
+    private final Path dir;
 
     /**
      * Creates an object from file path an already calculated hash.
      * @param path path to file.
+     * @param dir path to the hashed directory which the file belongs to.
      * @param hash hash of file.
      */
-    HashedFile(Path path, String hash) {
+    HashedFile(Path path, Path dir, String hash) {
         this.hash = hash;
         this.path = path;
+        this.dir = dir;
     }
 
     /**
      * Creates an object calculating hash.
      * @param path path to the file.
+     * @param dir path to the hashed directory which the file belongs to.
      */
-    HashedFile(Path path) {
+    HashedFile(Path path, Path dir) {
         this.path = path;
+        this.dir = dir;
         hash = calcFileHash(path.toString());
     }
 
@@ -67,6 +73,21 @@ public class HashedFile {
         return path;
     }
 
+    /**
+     * Returns the directory to which the file belongs.
+     * @return dir
+     */
+    public Path getDir() {
+        return dir;
+    }
+
+    /**
+     * Compares this object with another HashedFile. Two HashedFiles are considered equal
+     * if their hashes coincide.
+     * @param obj another object to compare this one with.
+     * @return true if the given object is an equal HashedFile, false if it is not equal
+     * or is not a HashedFile object.
+     */
     @Override
     public boolean equals(Object obj) {
         return obj instanceof HashedFile &&

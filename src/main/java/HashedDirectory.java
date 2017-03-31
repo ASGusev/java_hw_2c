@@ -29,7 +29,7 @@ public class HashedDirectory {
                 for (String line : Files.readAllLines(hashesPath)) {
                     String[] parts = line.split(" ");
                     hashes.put(Paths.get(parts[0]),
-                            new HashedFile(Paths.get(parts[0]), parts[1]));
+                            new HashedFile(Paths.get(parts[0]), dir, parts[1]));
                 }
             } else {
                 Files.createFile(hashesPath);
@@ -80,7 +80,7 @@ public class HashedDirectory {
      */
     void addFile(Path dirPath, Path filePath) throws VCS.NoSuchFileException {
         try {
-            if (!Files.isRegularFile(filePath)) {
+            if (!Files.isRegularFile(dirPath.resolve(filePath))) {
                 throw new VCS.NoSuchFileException();
             }
 
@@ -89,7 +89,7 @@ public class HashedDirectory {
                     StandardCopyOption.REPLACE_EXISTING);
 
             hashes.put(filePath,
-                    new HashedFile(Paths.get(dir.resolve(filePath).toString())));
+                    new HashedFile(Paths.get(dir.resolve(filePath).toString()), dir));
         } catch (IOException e) {
             throw new VCS.FileSystemError();
         }
@@ -144,6 +144,9 @@ public class HashedDirectory {
         return hashes;
     }
 
+    /**
+     * Removes all files from the directory.
+     */
     protected void clear() {
         try {
             wipeDir(dir.toFile());

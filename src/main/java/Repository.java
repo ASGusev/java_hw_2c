@@ -23,12 +23,17 @@ public abstract class Repository {
     /**
      * Initialises a repository in the current directory. A folder with all the
      * necessary information is created.
-     * @param author the first username for the created repo
-     * @throws VCS.RepoAlreadyExistsException if a repo is already initialised in current folder
+     * @param author the first username for the created repository.
+     * @throws VCS.RepoAlreadyExistsException if a repository is already initialised
+     * in the current folder.
+     * @throws IllegalArgumentException if the author parameter is an empty string.
      */
     protected static void create(String author) throws VCS.RepoAlreadyExistsException {
         if (Files.exists(Paths.get(Repository.REPO_DIR_NAME), LinkOption.NOFOLLOW_LINKS)) {
             throw new VCS.RepoAlreadyExistsException();
+        }
+        if (author.length() == 0) {
+            throw new IllegalArgumentException();
         }
         try {
             Files.createDirectory(Paths.get(Repository.REPO_DIR_NAME));

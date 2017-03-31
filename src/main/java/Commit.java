@@ -211,6 +211,13 @@ public class Commit {
         return pedigree;
     }
 
+    /**
+     * Compares two Commit objects. Two commit objects are considered equal if their
+     * numbers coincide.
+     * @param o the object to compare with.
+     * @return true if the given object is an equal Commit object, false if it is not
+     * equal or is not a Commit object.
+     */
     @Override
     public boolean equals(Object o) {
         return o instanceof Commit && ((Commit)o).number.equals(this.number);
