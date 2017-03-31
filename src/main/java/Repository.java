@@ -16,7 +16,6 @@ public abstract class Repository {
     protected static final String USERNAME_FILE = "user";
     protected static final String COMMITS_COUNTER_FILENAME = "commit";
     protected static final String POSITION_FILENAME = "position";
-    protected static final String STAGE_DIR = "stage";
     protected static final String DEFAULT_BRANCH = "master";
     protected static final String WORKING_DIR_HASHES = "hashes";
     private static HashedDirectory workingDirectory;
@@ -42,7 +41,8 @@ public abstract class Repository {
                     "0".getBytes());
 
             //Creating stage directory
-            Files.createDirectory(Paths.get(REPO_DIR_NAME, STAGE_DIR));
+            Files.createDirectory(Paths.get(REPO_DIR_NAME, StagingZone.STAGE_DIR));
+            Files.createFile(Paths.get(REPO_DIR_NAME, StagingZone.STAGE_LIST));
 
             //Setting up position tracking
             Files.write(Paths.get(REPO_DIR_NAME, POSITION_FILENAME),

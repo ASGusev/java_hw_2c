@@ -188,9 +188,7 @@ public class Commit {
         HashedDirectory workingDirectory = Repository.getWorkingDirectory();
         workingDirectory.cloneDirectory(contentDirectory);
 
-        HashedDirectory stageDir = StagingZone.getDir();
-        stageDir.cloneDirectory(contentDirectory);
-        stageDir.flushHashes();
+        StagingZone.cloneDir(contentDirectory);
 
         Repository.setCurrentCommit(this);
     }

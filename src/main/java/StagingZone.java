@@ -6,12 +6,13 @@ import java.nio.file.Paths;
  * determining which files should be included in the next commit.
  */
 public abstract class StagingZone {
+    protected static final String STAGE_DIR = "stage";
     protected static final String STAGE_LIST = "stage_list";
     private static final Path STAGE_PATH =
-            Paths.get(Repository.REPO_DIR_NAME, Repository.STAGE_DIR);
+            Paths.get(Repository.REPO_DIR_NAME, STAGE_DIR);
     private static final Path LIST_PATH =
             Paths.get(Repository.REPO_DIR_NAME, STAGE_LIST);
-    private static final HashedDirectory STAGE_DIR =
+    private static final HashedDirectory STAGE_HASH_DIR =
             new HashedDirectory(STAGE_PATH, LIST_PATH);
 
     /**
@@ -21,8 +22,8 @@ public abstract class StagingZone {
      * correct file.
      */
     protected static void addFile(Path filePath) throws VCS.NoSuchFileException {
-        STAGE_DIR.addFile(Paths.get("."), filePath);
-        STAGE_DIR.flushHashes();
+        STAGE_HASH_DIR.addFile(Paths.get("."), filePath);
+        STAGE_HASH_DIR.flushHashes();
     }
 
     /**
@@ -30,6 +31,17 @@ public abstract class StagingZone {
      * @return a HashedDirectory object representing the directory with staged files.
      */
     protected static HashedDirectory getDir() {
-        return STAGE_DIR;
+        return STAGE_HASH_DIR;
+    }
+
+    protected static void wipe() {
+        STAGE_HASH_DIR.clear();
+        STAGE_HASH_DIR.flushHashes();
+    }
+
+    protected static void cloneDir(HashedDirectory dir) {
+        wipe();
+        STAGE_HASH_DIR.cloneDirectory(dir);
+        STAGE_HASH_DIR.flushHashes();
     }
 }

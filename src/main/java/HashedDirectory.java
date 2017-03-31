@@ -140,7 +140,16 @@ public class HashedDirectory {
      * Gets a map with file descriptions.
      * @return a Map from file path in the directory to its hash and absolute path.
      */
-    public Map<Path, HashedFile> getFileDescriptions() {
+    protected Map<Path, HashedFile> getFileDescriptions() {
         return hashes;
+    }
+
+    protected void clear() {
+        try {
+            wipeDir(dir.toFile());
+            hashes.clear();
+        } catch (IOException e) {
+            throw new VCS.FileSystemError();
+        }
     }
 }

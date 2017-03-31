@@ -9,7 +9,7 @@ import java.security.NoSuchAlgorithmException;
 /**
  * A class representing a file with calculated hash.
  */
-class HashedFile {
+public class HashedFile {
     private final String hash;
     private final Path path;
 

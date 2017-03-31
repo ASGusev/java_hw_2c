@@ -23,7 +23,7 @@ public class StagingZoneTest {
 
             StagingZone.addFile(filePath);
             Assert.assertTrue(Files.exists(Paths.get(Repository.REPO_DIR_NAME,
-                    Repository.STAGE_DIR, FILE_NAME)));
+                    StagingZone.STAGE_DIR, FILE_NAME)));
             List<String> stageHashes = Files.readAllLines(
                     Paths.get(Repository.REPO_DIR_NAME, StagingZone.STAGE_LIST));
             Assert.assertEquals(Collections.singletonList(expectedHash), stageHashes);

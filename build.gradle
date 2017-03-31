@@ -17,3 +17,7 @@ jar {
         )
     }
 }
+
+test {
+    forkEvery = 1
+}
