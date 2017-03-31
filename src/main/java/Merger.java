@@ -59,7 +59,6 @@ public abstract class Merger {
 
         HashedDirectory stageDir = StagingZone.getDir();
         resFiles.forEach((path, desc) -> {
-            System.out.println(desc.getDir().toString() + ' ' + desc.getPath().toString());
             try {
                 stageDir.addFile(desc.getDir(), path);
             } catch (VCS.NoSuchFileException e) {

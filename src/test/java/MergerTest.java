@@ -118,7 +118,7 @@ public class MergerTest {
             Assert.assertEquals(V3, Files.readAllLines(FILE_UPDATED_IN_BOTH));
             Assert.assertEquals(V3, Files.readAllLines(FILE_CREATED_IN_BOTH));
         } finally {
-            //HashedDirectory.deleteDir(Repository.REPO_DIR_NAME);
+            HashedDirectory.deleteDir(Repository.REPO_DIR_NAME);
             if (Files.exists(FILE_CREATED_IN_BOTH)) {
                 Files.delete(FILE_CREATED_IN_BOTH);
             }

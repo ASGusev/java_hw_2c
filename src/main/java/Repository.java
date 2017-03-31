@@ -48,6 +48,7 @@ public abstract class Repository {
             //Creating stage directory
             Files.createDirectory(Paths.get(REPO_DIR_NAME, StagingZone.STAGE_DIR));
             Files.createFile(Paths.get(REPO_DIR_NAME, StagingZone.STAGE_LIST));
+            StagingZone.wipe();
 
             //Setting up position tracking
             Files.write(Paths.get(REPO_DIR_NAME, POSITION_FILENAME),

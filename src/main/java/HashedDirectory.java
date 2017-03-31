@@ -1,8 +1,5 @@
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.nio.file.*;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -121,8 +118,11 @@ public class HashedDirectory {
      */
     protected void flushHashes() {
         try {
-            BufferedWriter hashWriter = new BufferedWriter(
-                    new FileWriter(hashesPath.toString()));
+            if (Files.exists(hashesPath)) {
+                Files.delete(hashesPath);
+            }
+            BufferedWriter hashWriter = Files.newBufferedWriter(hashesPath,
+                    StandardOpenOption.WRITE, StandardOpenOption.CREATE);
             hashes.forEach((path, s) -> {
                 try {
                     hashWriter.write(path.toString() + ' ' + s.getHash() + '\n');
