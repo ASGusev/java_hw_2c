@@ -237,4 +237,14 @@ public class HashedDirectory {
     protected boolean contains(@Nonnull Path filePath) {
         return Files.isRegularFile(dir.resolve(filePath));
     }
+
+    /**
+     * Gets a HashedFile representation of a file from the directory by its path.
+     * @param filePath the path to the file in directory.
+     * @return a HashedFile representation of the file or null if the file doesn't exist.
+     */
+    @Nullable
+    protected HashedFile getHashedFile(@Nonnull Path filePath) {
+        return hashes.get(filePath);
+    }
 }

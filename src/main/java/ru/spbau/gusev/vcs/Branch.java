@@ -176,7 +176,6 @@ public class Branch {
                 try {
                     HashedDirectory.deleteDir(commitsDir.resolve(commit));
                 } catch (IOException e) {
-                    e.printStackTrace();
                     throw new VCS.FileSystemError();
                 }
             });

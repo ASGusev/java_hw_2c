@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public abstract class WorkingDirectory {
     private final static Path WORKING_DIR = Paths.get(".");
@@ -95,6 +96,10 @@ public abstract class WorkingDirectory {
         return Files.isRegularFile(filePath);
     }
 
+    /**
+     * Removes from the working directory all the files that have not been added to
+     * the repository.
+     */
     protected static void clean() {
         try {
             Files.walk(WORKING_DIR)
@@ -108,6 +113,44 @@ public abstract class WorkingDirectory {
                             throw new VCS.FileSystemError();
                         }
                     });
+        } catch (IOException e) {
+            throw new VCS.FileSystemError();
+        }
+    }
+
+    /**
+     * Lists all the files that have been added to the repository but are in a different
+     * condition at the moment of method call.
+     * @return a list containing names of all changed files.
+     */
+    @Nonnull
+    protected static List<String> getChangedFiles() {
+        try {
+            return Files.walk(WORKING_DIR)
+                    .filter(WorkingDirectory::isNotIgnored)
+                    .filter(StagingZone::contains)
+                    .filter(filePath -> !new HashedFile(filePath, WORKING_DIR).equals(StagingZone.getHashedFile(filePath)))
+                    .map(Path::toString)
+                    .collect(Collectors.toList());
+        } catch (IOException e) {
+            throw new VCS.FileSystemError();
+        }
+    }
+
+    /**
+     * Lists all the files in the working directory that have not been added to the
+     * repository.
+     * @return a List containing names of all files that are not in the repository.
+     */
+    @Nonnull
+    protected static List<String> getCreatedFiles() {
+        try {
+            return Files.walk(WORKING_DIR)
+                    .filter(Files::isRegularFile)
+                    .filter(WorkingDirectory::isNotIgnored)
+                    .filter(filePath -> !StagingZone.contains(filePath))
+                    .map(Path::toString)
+                    .collect(Collectors.toList());
         } catch (IOException e) {
             throw new VCS.FileSystemError();
         }

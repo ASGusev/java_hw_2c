@@ -1,9 +1,12 @@
 package ru.spbau.gusev.vcs;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -92,5 +95,31 @@ public abstract class StagingZone {
      */
     protected static boolean contains(@Nonnull Path filePath) {
         return STAGE_HASH_DIR.contains(filePath);
+    }
+
+    /**
+     * Lists all staged files that are not present in the last commit in their staged
+     * condition.
+     * @return a list containing names of all staged files.
+     * @throws VCS.BadRepoException if the repository data folder is corrupt.
+     */
+    @Nonnull
+    protected static List<String> getStagedFiles() throws VCS.BadRepoException {
+        Commit headCommit = Repository.getCurrentCommit();
+        return STAGE_HASH_DIR.getFiles()
+                .filter(file -> !file.equals(headCommit.getHashedFile(file.getPath())))
+                .map(HashedFile::getPath)
+                .map(Path::toString)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Gets a HashedFile representation of a file from the staging zone by its path.
+     * @param filePath the path to the file.
+     * @return a HashedFile representation of the file or null if the file doesn't exist.
+     */
+    @Nullable
+    protected static HashedFile getHashedFile(@Nullable Path filePath) {
+        return STAGE_HASH_DIR.getHashedFile(filePath);
     }
 }

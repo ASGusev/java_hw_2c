@@ -1,6 +1,7 @@
 package ru.spbau.gusev.vcs;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -8,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * A class representing a commit in the repository.
@@ -138,7 +140,6 @@ public class Commit {
             Repository.setCurrentCommit(this);
             Repository.updateCommitCounter(number + 1);
         } catch (IOException | VCS.FileSystemError e) {
-            e.printStackTrace();
             try {
                 HashedDirectory.deleteDir(rootDir);
             } catch (IOException e1) {}
@@ -282,5 +283,33 @@ public class Commit {
         HashedFile hashedFile = new HashedFile(filePath,
                 rootDir.resolve(COMMIT_CONTENT_DIR));
         WorkingDirectory.addFile(hashedFile);
+    }
+
+    /**
+     * Gets a HashedFile representation of a file from this commit by its path.
+     * @param filePath the path to the file.
+     * @return a HashedFile representation of the file or null if the file doesn't exist.
+     */
+    @Nullable
+    protected HashedFile getHashedFile(@Nonnull Path filePath) {
+        if (!contentDir.contains(filePath)) {
+            return null;
+        }
+
+        return contentDir.getHashedFile(filePath);
+    }
+
+    /**
+     * Lists all the files that have been removed from the repository since creation of
+     * this commit.
+     * @return a List with all removed files.
+     */
+    @Nonnull
+    protected List<String> getRemovedFiles() {
+        return contentDir.getFiles()
+                .filter(file -> !StagingZone.contains(file.getPath()))
+                .map(HashedFile::getPath)
+                .map(Path::toString)
+                .collect(Collectors.toList());
     }
 }

@@ -149,11 +149,10 @@ public class VCS {
             BadRepoException {
         Path filePath = Paths.get(filename);
 
-        boolean existedInWorkingDirectory = WorkingDirectory.deleteFile(filePath);
-        boolean wasInStagingZone = StagingZone.removeFile(filePath);
-        if (!existedInWorkingDirectory && !wasInStagingZone) {
+        if (!StagingZone.removeFile(filePath)) {
             throw new NoSuchFileException();
         }
+        WorkingDirectory.deleteFile(filePath);
     }
 
     /**
@@ -172,6 +171,46 @@ public class VCS {
      */
     public static void clean() {
         WorkingDirectory.clean();
+    }
+
+    /**
+     * Lists all staged files that are not present in the last commit in their staged
+     * condition.
+     * @return a list containing names of all staged files.
+     * @throws VCS.BadRepoException if the repository data folder is corrupt.
+     */
+    @Nonnull
+    public static List<String> getStaged() throws BadRepoException {
+        return StagingZone.getStagedFiles();
+    }
+
+    /**
+     * Lists all the files that have been added to the repository but are in a different
+     * condition at the moment of method call.
+     * @return a list containing names of all changed files.
+     */
+    @Nonnull
+    public static List<String> getChanged() {
+        return WorkingDirectory.getChangedFiles();
+    }
+
+    /**
+     * Lists all the files in the working directory that have not been added to the
+     * repository.
+     * @return a List containing names of all files that are not in the repository.
+     */
+    @Nonnull
+    public static List<String> getCreated() {
+        return WorkingDirectory.getCreatedFiles();
+    }
+
+    /**
+     * Lists files that have been removed since the creation of the current commit.
+     * @return a list with all removed files.
+     */
+    @Nonnull
+    public static List<String> getRemoved() throws BadRepoException {
+        return Repository.getCurrentCommit().getRemovedFiles();
     }
 
     /**

@@ -53,6 +53,10 @@ public class Main {
                     VCS.clean();
                     break;
                 }
+                case "status": {
+                    status();
+                    break;
+                }
 
                 default: {
                     showHelp();
@@ -79,7 +83,8 @@ public class Main {
         "reset <filename> - restores the file with given name to the state captured " +
                 "in the current head commit\n" +
         "clean - removes from the working directory all the files that have not been " +
-                "added to the repository");
+                "added to the repository\n" +
+        "status - to show information about new, changed, deleted and staged files");
     }
 
     private static void init(@Nonnull String[] args) {
@@ -280,6 +285,24 @@ public class Main {
             } catch (VCS.BadRepoException e) {
                 System.out.println("Incorrect repo.");
             }
+        }
+    }
+
+    private static void status() {
+        try {
+            System.out.println("Changed files:");
+            VCS.getChanged().forEach(System.out::println);
+
+            System.out.println("\nNew files:");
+            VCS.getCreated().forEach(System.out::println);
+
+            System.out.println("\nStaged files:");
+            VCS.getStaged().forEach(System.out::println);
+
+            System.out.println("\nRemoved files:");
+            VCS.getRemoved().forEach(System.out::println);
+        } catch (VCS.BadRepoException e) {
+            System.out.println("Incorrect repo");
         }
     }
 }
