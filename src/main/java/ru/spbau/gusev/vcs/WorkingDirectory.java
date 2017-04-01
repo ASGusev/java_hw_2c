@@ -37,7 +37,8 @@ public abstract class WorkingDirectory {
      */
     protected static void addFile(@Nonnull HashedFile file) {
         try {
-            Files.createDirectories(WORKING_DIR.resolve(file.getPath()));
+            Files.createDirectories(WORKING_DIR.resolve(file.getPath()).
+                    toAbsolutePath().getParent());
             Files.copy(file.getFullPath(), file.getPath(),
                     StandardCopyOption.REPLACE_EXISTING);
 
@@ -80,5 +81,14 @@ public abstract class WorkingDirectory {
         } catch (IOException e) {
             throw new VCS.FileSystemError();
         }
+    }
+
+    /**
+     * Checks if a file with given path exists in the working directory.
+     * @param filePath the path to file to check.
+     * @return true if such file exists, false if it doesn't or is not a regular file.
+     */
+    protected static boolean contains(@Nonnull Path filePath) {
+        return Files.isRegularFile(filePath);
     }
 }

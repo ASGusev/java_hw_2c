@@ -1,6 +1,8 @@
 import java.util.List;
 import ru.spbau.gusev.vcs.*;
 
+import javax.annotation.Nonnull;
+
 public class Main {
     public static void main(String[] args) {
         if (args.length == 0) {
@@ -31,13 +33,20 @@ public class Main {
                     checkout(args);
                     break;
                 }
-
                 case "merge": {
                     merge(args);
                     break;
                 }
                 case "login": {
                     login(args);
+                    break;
+                }
+                case "rm": {
+                    rm(args);
+                    break;
+                }
+                case "reset": {
+                    reset(args);
                     break;
                 }
 
@@ -60,10 +69,14 @@ public class Main {
                 "specified commit\n" +
         "checkout branch <name> - checks out the head of the given branch\n" +
         "merge <branch name> - merges the given branch into current\n" +
-        "login <new username> - changes current username to the given one");
+        "login <new username> - changes current username to the given one\n" +
+        "rm <filename> - removes the file with given name from the working directory " +
+                "and stage\n" +
+        "reset <filename> - restores the file with given name to the state captured " +
+                "in the current head commit");
     }
 
-    private static void init(String[] args) {
+    private static void init(@Nonnull String[] args) {
         if (args.length == 1) {
             showHelp();
         } else {
@@ -77,7 +90,7 @@ public class Main {
         }
     }
 
-    private static void add(String[] args) {
+    private static void add(@Nonnull String[] args) {
         if (args.length == 1) {
             showHelp();
         } else {
@@ -94,7 +107,7 @@ public class Main {
         }
     }
 
-    private static void commit(String[] args) {
+    private static void commit(@Nonnull String[] args) {
         if (args.length == 1) {
             System.out.println("CommitDescription message required.");
         } else {
@@ -109,7 +122,7 @@ public class Main {
         }
     }
 
-    private static void tryProcessBranch(String[] args) {
+    private static void tryProcessBranch(@Nonnull String[] args) {
         if (args.length == 3) {
             switch (args[1]) {
                 case "create": {
@@ -171,7 +184,7 @@ public class Main {
         }
     }
 
-    private static void checkout(String[] args) {
+    private static void checkout(@Nonnull String[] args) {
         if (args.length == 3) {
             switch (args[1]) {
                 case "branch": {
@@ -205,7 +218,7 @@ public class Main {
         }
     }
 
-    private static void merge(String[] args) {
+    private static void merge(@Nonnull String[] args) {
         if (args.length < 2) {
             System.out.println("Specify a branch too merge.");
         } else {
@@ -222,12 +235,42 @@ public class Main {
         }
     }
 
-    private static void login(String[] args) {
+    private static void login(@Nonnull String[] args) {
         if (args.length < 2) {
             showHelp();
         } else {
             try {
                 VCS.setUserName(args[1]);
+            } catch (VCS.BadRepoException e) {
+                System.out.println("Incorrect repo.");
+            }
+        }
+    }
+
+    private static void rm(@Nonnull String[] args) {
+        if (args.length < 2) {
+            System.out.println("Specify a file ro remove.");
+        } else {
+            try {
+                VCS.remove(args[1]);
+            } catch (VCS.NoSuchFileException e) {
+                System.out.println("No file called " + args[1] + " found in working" +
+                        " directory or staging zone.");
+            } catch (VCS.BadRepoException e) {
+                System.out.println("Incorrect repo.");
+            }
+        }
+    }
+
+    private static void reset(@Nonnull String[] args) {
+        if (args.length < 2) {
+            System.out.println("Specify a file ro reset.");
+        } else {
+            try {
+                VCS.reset(args[1]);
+            } catch (VCS.NoSuchFileException e) {
+                System.out.println("The current commit does not contain a file called "
+                        + args[1]);
             } catch (VCS.BadRepoException e) {
                 System.out.println("Incorrect repo.");
             }

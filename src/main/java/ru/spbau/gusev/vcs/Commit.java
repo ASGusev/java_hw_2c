@@ -17,6 +17,15 @@ public class Commit {
     protected static final String COMMIT_METADATA_FILE = "metadata";
     protected static final String COMMIT_FILES_LIST = "files_list";
 
+    private final Integer number;
+    private final long creationTime;
+    private final String message;
+    private final Branch branch;
+    private final String author;
+    private final Integer father;
+    private final Path rootDir;
+    private final HashedDirectory contentDir;
+
     /**
      * Gets the commit number.
      * @return the commit number.
@@ -77,14 +86,6 @@ public class Commit {
         }
     }
 
-    private final Integer number;
-    private final long creationTime;
-    private final String message;
-    private final Branch branch;
-    private final String author;
-    private final Integer father;
-    private final Path rootDir;
-
     /**
      * Creates a new commit in the repository with given message in the current
      * branch and sets it as the global head.
@@ -128,8 +129,8 @@ public class Commit {
             metadataWriter.write(message);
             metadataWriter.close();
 
-            HashedDirectory contentDir = new HashedDirectory(
-                    rootDir.resolve(COMMIT_CONTENT_DIR), rootDir.resolve(COMMIT_FILES_LIST));
+            contentDir = new HashedDirectory(rootDir.resolve(COMMIT_CONTENT_DIR),
+                    rootDir.resolve(COMMIT_FILES_LIST));
             StagingZone.getFiles().forEach(contentDir::copyFile);
             contentDir.flushHashes();
 
@@ -177,6 +178,9 @@ public class Commit {
                 messageBuilder.append(metadataScanner.nextLine());
             }
             message = messageBuilder.toString();
+
+            contentDir = new HashedDirectory(rootDir.resolve(COMMIT_CONTENT_DIR),
+                    rootDir.resolve(COMMIT_FILES_LIST));
         } catch (IOException e) {
             throw new VCS.FileSystemError();
         } catch (VCS.NoSuchBranchException e) {
@@ -221,13 +225,9 @@ public class Commit {
      * @throws VCS.BadRepoException if the repository folder is corrupt.
      */
     protected void checkout() throws VCS.BadRepoException {
-        Path contentDir = rootDir.resolve(COMMIT_CONTENT_DIR);
-        HashedDirectory contentDirectory = new HashedDirectory(contentDir,
-                rootDir.resolve(COMMIT_FILES_LIST));
+        contentDir.getFiles().forEach(WorkingDirectory::addFile);
 
-        contentDirectory.getFiles().forEach(WorkingDirectory::addFile);
-
-        StagingZone.cloneDir(contentDirectory);
+        StagingZone.cloneDir(contentDir);
 
         Repository.setCurrentCommit(this);
     }
@@ -272,5 +272,20 @@ public class Commit {
     public Map<Path, HashedFile> getFileDescriptions() {
         return new HashedDirectory(rootDir.resolve(COMMIT_CONTENT_DIR),
                 rootDir.resolve(COMMIT_FILES_LIST)).getFileDescriptions();
+    }
+
+    /**
+     * Restores file with given path in the working directory to the its condition at
+     * the moment of commit creation.
+     * @param filePath the path to the file to restore.
+     */
+    protected void resetFile(@Nonnull Path filePath) throws VCS.NoSuchFileException {
+        if (!Files.isRegularFile(rootDir.resolve(COMMIT_CONTENT_DIR).resolve(filePath))) {
+            throw new VCS.NoSuchFileException();
+        }
+
+        HashedFile hashedFile = new HashedFile(filePath,
+                rootDir.resolve(COMMIT_CONTENT_DIR));
+        WorkingDirectory.addFile(hashedFile);
     }
 }

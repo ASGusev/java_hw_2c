@@ -76,5 +76,15 @@ public abstract class StagingZone {
             throw new VCS.BadRepoException();
         }
         STAGE_HASH_DIR.deleteFile(file);
+        STAGE_HASH_DIR.flushHashes();
+    }
+
+    /**
+     * Checks if a file with given path is in the staging zone.
+     * @param filePath the path to check.
+     * @return true if a file with given path exists in the staging zone, false otherwise.
+     */
+    protected static boolean contains(@Nonnull Path filePath) {
+        return Files.isRegularFile(STAGE_PATH.resolve(filePath));
     }
 }

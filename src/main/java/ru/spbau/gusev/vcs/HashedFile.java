@@ -37,7 +37,7 @@ public class HashedFile {
     HashedFile(@Nonnull Path path, @Nonnull Path dir) {
         this.path = path;
         this.dir = dir;
-        hash = calcFileHash(path.toString());
+        hash = calcFileHash(dir.resolve(path).toString());
     }
 
     /**

@@ -141,15 +141,33 @@ public class VCS {
 
     /**
      * Removes file with given name from the working directory and staging zone.
-     * @param filename
-     * @throws NoSuchFileException
-     * @throws BadRepoException
+     * @param filename name of the file to remove.
+     * @throws NoSuchFileException if a file with the given name does not exist
+     * @throws BadRepoException if the repository folder is corrupt.
      */
     public static void remove(@Nonnull String filename) throws NoSuchFileException,
             BadRepoException {
         Path filePath = Paths.get(filename);
-        WorkingDirectory.deleteFile(filePath);
-        StagingZone.removeFile(filePath);
+
+        if (!WorkingDirectory.contains(filePath) && !StagingZone.contains(filePath)) {
+            throw new NoSuchFileException();
+        }
+        if (WorkingDirectory.contains(filePath)) {
+            WorkingDirectory.deleteFile(filePath);
+        }
+        if (StagingZone.contains(filePath)) {
+            StagingZone.removeFile(filePath);
+        }
+    }
+
+    /**
+     * Returns the file with given name to its stage in the current commit.
+     * @param filename the name of file to reset.
+     */
+    public static void reset(@Nonnull String filename) throws BadRepoException,
+            NoSuchFileException {
+        Path filePath = Paths.get(filename);
+        Repository.getCurrentCommit().resetFile(filePath);
     }
 
     /**
