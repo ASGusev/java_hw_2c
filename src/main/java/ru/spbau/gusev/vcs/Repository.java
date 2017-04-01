@@ -249,18 +249,6 @@ public abstract class Repository {
     }
 
     /**
-     * Gets the working directory as a HashedDirectory object.
-     * @return a HashedDirectory object representing the working directory.
-     */
-    @Nonnull
-    protected static HashedDirectory getWorkingDirectory() {
-        if (workingDirectory == null) {
-            workingDirectory = new HashedDirectory(Paths.get("."), null);
-        }
-        return workingDirectory;
-    }
-
-    /**
      * Checks out a supplied commit. The working directory is returned to the
      * condition of that commit.
      * @param commitID the number of the commit too checkout.

@@ -130,7 +130,7 @@ public class Commit {
 
             HashedDirectory contentDir = new HashedDirectory(
                     rootDir.resolve(COMMIT_CONTENT_DIR), rootDir.resolve(COMMIT_FILES_LIST));
-            contentDir.cloneDirectory(StagingZone.getDir());
+            StagingZone.getFiles().forEach(contentDir::copyFile);
             contentDir.flushHashes();
 
             branch.addCommit(this);
@@ -196,6 +196,7 @@ public class Commit {
                         try {
                             Files.delete(contentDir.relativize(path));
                         } catch (IOException e) {
+                            e.printStackTrace();
                             throw new VCS.FileSystemError();
                         }
                     });
@@ -224,8 +225,7 @@ public class Commit {
         HashedDirectory contentDirectory = new HashedDirectory(contentDir,
                 rootDir.resolve(COMMIT_FILES_LIST));
 
-        HashedDirectory workingDirectory = Repository.getWorkingDirectory();
-        workingDirectory.cloneDirectory(contentDirectory);
+        contentDirectory.getFiles().forEach(WorkingDirectory::addFile);
 
         StagingZone.cloneDir(contentDirectory);
 

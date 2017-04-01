@@ -61,16 +61,11 @@ public abstract class Merger {
             }
         });
 
-        HashedDirectory stageDir = StagingZone.getDir();
-        resFiles.forEach((path, desc) -> {
-            try {
-                stageDir.addFile(desc.getDir(), path);
-            } catch (VCS.NoSuchFileException e) {
-                throw new VCS.FileSystemError();
-            }
-        });
-        stageDir.flushHashes();
+        StagingZone.wipe();
+        resFiles.forEach((path, desc) -> StagingZone.addFile(desc));
+
         Commit mergedCommit = new Commit("Branch " + branchToMerge.getName() + " merged.");
+        curCommit.clear();
         mergedCommit.checkout();
         return mergedCommit;
     }

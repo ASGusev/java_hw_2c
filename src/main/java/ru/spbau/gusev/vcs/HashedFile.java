@@ -99,4 +99,14 @@ public class HashedFile {
         return obj instanceof HashedFile &&
                 hash.equals(((HashedFile) obj).hash);
     }
+
+    /**
+     * Gets the complete path to the file. Complete path consists of the directory path
+     * and the file path.
+     * @return the path to the file.
+     */
+    @Nonnull
+    protected Path getFullPath() {
+        return dir.resolve(path);
+    }
 }

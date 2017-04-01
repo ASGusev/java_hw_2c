@@ -4,6 +4,7 @@ import java.io.*;
 import java.nio.file.*;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import javax.annotation.Nonnull;
 
@@ -161,6 +162,68 @@ public class HashedDirectory {
         try {
             wipeDir(dir.toFile());
             hashes.clear();
+        } catch (IOException e) {
+            throw new VCS.FileSystemError();
+        }
+    }
+
+    /**
+     * Recalculates hashes for all files in the directory.
+     */
+    protected void updateHashes() {
+        hashes.clear();
+        try {
+            Files.walk(dir)
+                    .filter(Files::isRegularFile)
+                    .forEach(path -> {
+                        hashes.put(path, new HashedFile(dir, path));
+                    });
+        } catch (IOException e) {
+            throw new VCS.FileSystemError();
+        }
+    }
+
+    /**
+     * Copies a file represented by a HashedFile object into the folder.
+     * @param file the file to copy.
+     */
+    protected void copyFile(@Nonnull HashedFile file) {
+        try {
+            Path newFilePath = dir.resolve(file.getPath());
+
+            Files.createDirectories(newFilePath.getParent());
+            Files.copy(file.getFullPath(), newFilePath,
+                    StandardCopyOption.REPLACE_EXISTING);
+
+            hashes.put(file.getPath(), new HashedFile(file.getPath(), dir, file.getHash()));
+        } catch (IOException e) {
+            throw new VCS.FileSystemError();
+        }
+    }
+
+    /**
+     * Makes a stream containing all files from the directory in HashedFile form.
+     * @return a stream with all files.
+     */
+    @Nonnull
+    protected Stream<HashedFile> getFiles() {
+        return hashes.values().stream();
+    }
+
+    /**
+     * Deletes the file by the given path from the directory.
+     * @param path the path pointing to the file that should be deleted.
+     * @throws VCS.NoSuchFileException if the given path does not point to a file in
+     * the directory.
+     */
+    protected void deleteFile(@Nonnull Path path) throws VCS.NoSuchFileException {
+        if (Files.notExists(dir.resolve(path))) {
+            throw new VCS.NoSuchFileException();
+        }
+
+        hashes.remove(path);
+        try {
+            Files.delete(dir.resolve(path));
         } catch (IOException e) {
             throw new VCS.FileSystemError();
         }

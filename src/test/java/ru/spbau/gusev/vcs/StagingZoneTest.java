@@ -23,7 +23,7 @@ public class StagingZoneTest {
             Files.write(filePath, FILE_CONTENT.getBytes());
             String expectedHash = FILE_NAME + " " + HashedFile.calcFileHash(FILE_NAME);
 
-            StagingZone.addFile(filePath);
+            StagingZone.addFile(WorkingDirectory.getHashedFileByName(FILE_NAME));
             Assert.assertTrue(Files.exists(Paths.get(Repository.REPO_DIR_NAME,
                     StagingZone.STAGE_DIR, FILE_NAME)));
             List<String> stageHashes = Files.readAllLines(

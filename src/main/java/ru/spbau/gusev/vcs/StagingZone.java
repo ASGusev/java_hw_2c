@@ -1,8 +1,10 @@
 package ru.spbau.gusev.vcs;
 
 import javax.annotation.Nonnull;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.stream.Stream;
 
 /**
  * A class representing the Staging zone. The function of the staging zone is
@@ -25,17 +27,16 @@ public abstract class StagingZone {
      * correct file.
      */
     protected static void addFile(@Nonnull Path filePath) throws VCS.NoSuchFileException {
-        STAGE_HASH_DIR.addFile(Paths.get("."), filePath);
-        STAGE_HASH_DIR.flushHashes();
+        addFile(WorkingDirectory.getHashedFileByName(filePath.toString()));
     }
 
     /**
-     * Gets the stage directory.
-     * @return a HashedDirectory object representing the directory with staged files.
+     * Adds a file to the staging directory, including it into the next commit.
+     * @param file the file to add represented by a HashedFile object.
      */
-    @Nonnull
-    protected static HashedDirectory getDir() {
-        return STAGE_HASH_DIR;
+    protected static void addFile(@Nonnull HashedFile file) {
+        STAGE_HASH_DIR.copyFile(file);
+        STAGE_HASH_DIR.flushHashes();
     }
 
     /**
@@ -54,5 +55,26 @@ public abstract class StagingZone {
         wipe();
         STAGE_HASH_DIR.cloneDirectory(dir);
         STAGE_HASH_DIR.flushHashes();
+    }
+
+    /**
+     * Creates a stream containing all files from staging directory as HashedFile objects.
+     * @return a stream with all staged files.
+     */
+    protected static Stream<HashedFile> getFiles() {
+        return STAGE_HASH_DIR.getFiles();
+    }
+
+    /**
+     * Removes the file pointed by given path from staging zone.
+     * @param file the path pointing to the staged file to delete.
+     * @throws VCS.NoSuchFileException if the given path does not point to any staged files.
+     */
+    protected static void removeFile(@Nonnull Path file) throws VCS.NoSuchFileException,
+            VCS.BadRepoException {
+        if (!Files.exists(STAGE_PATH)) {
+            throw new VCS.BadRepoException();
+        }
+        STAGE_HASH_DIR.deleteFile(file);
     }
 }

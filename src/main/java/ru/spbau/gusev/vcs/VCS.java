@@ -1,6 +1,7 @@
 package ru.spbau.gusev.vcs;
 
 import javax.annotation.Nonnull;
+import java.io.IOException;
 import java.nio.file.*;
 import java.util.*;
 
@@ -51,7 +52,7 @@ public class VCS {
      * @throws NoSuchFileException if the given path does not lead to a file.
      */
     public static void addFile(@Nonnull String path) throws BadRepoException, NoSuchFileException {
-        StagingZone.addFile(Paths.get(path));
+        StagingZone.addFile(WorkingDirectory.getHashedFileByName(path));
     }
 
     /**
@@ -136,6 +137,19 @@ public class VCS {
     public static void merge(@Nonnull String branchName) throws BadPositionException,
             BadRepoException, NoSuchBranchException {
         Merger.merge(Branch.getByName(branchName));
+    }
+
+    /**
+     * Removes file with given name from the working directory and staging zone.
+     * @param filename
+     * @throws NoSuchFileException
+     * @throws BadRepoException
+     */
+    public static void remove(@Nonnull String filename) throws NoSuchFileException,
+            BadRepoException {
+        Path filePath = Paths.get(filename);
+        WorkingDirectory.deleteFile(filePath);
+        StagingZone.removeFile(filePath);
     }
 
     /**
