@@ -1,8 +1,10 @@
+package ru.spbau.gusev.vcs;
+
+import javax.annotation.Nonnull;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -21,7 +23,7 @@ public class HashedFile {
      * @param dir path to the hashed directory which the file belongs to.
      * @param hash hash of file.
      */
-    HashedFile(Path path, Path dir, String hash) {
+    HashedFile(@Nonnull Path path, @Nonnull Path dir, @Nonnull String hash) {
         this.hash = hash;
         this.path = path;
         this.dir = dir;
@@ -32,7 +34,7 @@ public class HashedFile {
      * @param path path to the file.
      * @param dir path to the hashed directory which the file belongs to.
      */
-    HashedFile(Path path, Path dir) {
+    HashedFile(@Nonnull Path path, @Nonnull Path dir) {
         this.path = path;
         this.dir = dir;
         hash = calcFileHash(path.toString());
@@ -43,7 +45,8 @@ public class HashedFile {
      * @param filePath path to the file to calculate hash.
      * @return SHA-1 hash of the provided file.
      */
-    protected static String calcFileHash(String filePath) {
+    @Nonnull
+    protected static String calcFileHash(@Nonnull String filePath) {
         DigestInputStream stream;
         byte[] hash = null;
         try (FileInputStream fin = new FileInputStream(filePath)) {
@@ -61,6 +64,7 @@ public class HashedFile {
      * Gets hash of the file.
      * @return the hash of the file.
      */
+    @Nonnull
     public String getHash() {
         return hash;
     }
@@ -69,6 +73,7 @@ public class HashedFile {
      * Gets the path to the file.
      * @return the path to the file.
      */
+    @Nonnull
     public Path getPath() {
         return path;
     }
@@ -77,6 +82,7 @@ public class HashedFile {
      * Returns the directory to which the file belongs.
      * @return dir
      */
+    @Nonnull
     public Path getDir() {
         return dir;
     }

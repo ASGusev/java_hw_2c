@@ -1,3 +1,5 @@
+package ru.spbau.gusev.vcs;
+
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -46,6 +48,31 @@ public class BranchTest {
                     masterCommits.get(masterCommits.size() - 1));
 
             Assert.assertEquals(commit, masterBranch.getHead());
+        } finally {
+            HashedDirectory.deleteDir(Repository.REPO_DIR_NAME);
+        }
+    }
+
+    @Test
+    public void logTest() throws IOException, VCS.RepoAlreadyExistsException,
+            VCS.BadPositionException, VCS.BadRepoException {
+        final String COMMIT_MESSAGE = "msg";
+
+        try {
+            Repository.create("usr");
+
+            Commit commit = new Commit(COMMIT_MESSAGE);
+            Branch branch = Repository.getCurBranch();
+            List<VCS.CommitDescription> log = branch.getLog();
+            VCS.CommitDescription commitDescription = log.get(1);
+
+            Assert.assertEquals((long)commit.getNumber(), commitDescription.getNumber());
+            Assert.assertEquals(commit.getAuthor(), commitDescription.getAuthor());
+            Assert.assertEquals(commit.getBranch().getName(),
+                    commitDescription.getBranch());
+            Assert.assertEquals(commit.getMessage(), commitDescription.getMessage());
+            Assert.assertEquals(commit.getCreationTime(),
+                    commitDescription.getTime().getTimeInMillis());
         } finally {
             HashedDirectory.deleteDir(Repository.REPO_DIR_NAME);
         }

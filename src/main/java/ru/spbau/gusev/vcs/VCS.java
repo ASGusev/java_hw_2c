@@ -1,3 +1,6 @@
+package ru.spbau.gusev.vcs;
+
+import javax.annotation.Nonnull;
 import java.nio.file.*;
 import java.util.*;
 
@@ -11,7 +14,7 @@ public class VCS {
      * @param author the first username for the created repo
      * @throws RepoAlreadyExistsException if a repo is already initialised in current folder
      */
-    public static void createRepo(String author) throws RepoAlreadyExistsException {
+    public static void createRepo(@Nonnull String author) throws RepoAlreadyExistsException {
         Repository.create(author);
     }
 
@@ -21,7 +24,7 @@ public class VCS {
      * @throws BadRepoException if the repository information folder is
      * not in a correct condition.
      */
-    public static void setUserName(String name) throws BadRepoException {
+    public static void setUserName(@Nonnull String name) throws BadRepoException {
         Repository.setUserName(name);
     }
 
@@ -34,7 +37,7 @@ public class VCS {
      * @throws BadPositionException if the current commit is not the head of the
      * current branch.
      */
-    public static void commit(String message) throws BadRepoException,
+    public static void commit(@Nonnull String message) throws BadRepoException,
             BadPositionException {
         Repository.setCurrentCommit(new Commit(message));
     }
@@ -47,7 +50,7 @@ public class VCS {
      * not in a correct condition.
      * @throws NoSuchFileException if the given path does not lead to a file.
      */
-    public static void addFile(String path) throws BadRepoException, NoSuchFileException {
+    public static void addFile(@Nonnull String path) throws BadRepoException, NoSuchFileException {
         StagingZone.addFile(Paths.get(path));
     }
 
@@ -58,7 +61,7 @@ public class VCS {
      * not in a correct condition.
      * @throws BranchAlreadyExistsException if a branch with this name already exists.
      */
-    public static void createBranch(String branchName) throws BadRepoException,
+    public static void createBranch(@Nonnull String branchName) throws BadRepoException,
             BranchAlreadyExistsException {
         Repository.setCurrentBranch(Branch.create(branchName));
     }
@@ -70,7 +73,7 @@ public class VCS {
      * not in a correct condition.
      * @throws NoSuchBranchException if a branch with the given name does not exist.
      */
-    public static void deleteBranch(String branchName) throws BadRepoException,
+    public static void deleteBranch(@Nonnull String branchName) throws BadRepoException,
             NoSuchBranchException, BadPositionException {
         Branch.getByName(branchName).delete();
     }
@@ -82,20 +85,11 @@ public class VCS {
      * not in a correct condition.
      * @throws NoSuchBranchException if a branch with the given name does not exist.
      */
+    @Nonnull
     public static List<CommitDescription> getLog() throws BadRepoException,
             NoSuchBranchException {
         Branch curBranch = Repository.getCurBranch();
         return curBranch.getLog();
-    }
-
-    /**
-     * Gets the number of the currently selected commit.
-     * @return the number of the current commit
-     * @throws BadRepoException if the repository information folder is
-     * not in a correct condition.
-     */
-    public static int getCurCommit() throws BadRepoException {
-        return Repository.getCurrentCommitNumber();
     }
 
     /**
@@ -120,7 +114,7 @@ public class VCS {
      * not in a correct condition.
      * @throws NoSuchBranchException if a branch with given name does not exist.
      */
-    public static void checkoutBranch(String branchName) throws BadRepoException,
+    public static void checkoutBranch(@Nonnull String branchName) throws BadRepoException,
             NoSuchBranchException {
         Branch newBranch = Branch.getByName(branchName);
         try {
@@ -139,7 +133,7 @@ public class VCS {
      * not in a correct condition.
      * @throws NoSuchBranchException if a branch with the given name does not exist.
      */
-    public static void merge(String branchName) throws BadPositionException,
+    public static void merge(@Nonnull String branchName) throws BadPositionException,
             BadRepoException, NoSuchBranchException {
         Merger.merge(Branch.getByName(branchName));
     }
@@ -154,7 +148,7 @@ public class VCS {
         private String message;
         private Calendar time;
 
-        CommitDescription(Commit commit) {
+        CommitDescription(@Nonnull Commit commit) {
             this.number = commit.getNumber();
             this.branch = commit.getBranch().getName();
             this.author = commit.getAuthor();
@@ -176,6 +170,7 @@ public class VCS {
          * Get the commit's branch
          * @return the branch that the commit belongs to.
          */
+        @Nonnull
         public String getBranch() {
             return branch;
         }
@@ -184,6 +179,7 @@ public class VCS {
          * Gets author of the commit.
          * @return the author of this commit.
          */
+        @Nonnull
         public String getAuthor() {
             return author;
         }
@@ -192,6 +188,7 @@ public class VCS {
          * Gets the message of the commit.
          * @return the commit message
          */
+        @Nonnull
         public String getMessage() {
             return message;
         }
@@ -200,6 +197,7 @@ public class VCS {
          * Gets time of the commit creation.
          * @return a Calendar object representing the commit creation time.
          */
+        @Nonnull
         public Calendar getTime() {
             return time;
         }

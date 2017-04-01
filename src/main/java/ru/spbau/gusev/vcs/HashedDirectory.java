@@ -1,7 +1,11 @@
+package ru.spbau.gusev.vcs;
+
 import java.io.*;
 import java.nio.file.*;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import javax.annotation.Nullable;
+import javax.annotation.Nonnull;
 
 /**
  * A class maintaining a folder where hashes are calculated for all files.
@@ -9,7 +13,7 @@ import java.util.Map;
 public class HashedDirectory {
     private final Path dir;
     private final Path hashesPath;
-    private Map<Path, HashedFile> hashes;
+    private final Map<Path, HashedFile> hashes;
 
     /**
      * Creates a HashedDirectory object with supplied directory and supplied file
@@ -17,19 +21,21 @@ public class HashedDirectory {
      * @param dir the path to the directory.
      * @param hashesPath the path to the file with hashes.
      */
-    protected HashedDirectory(Path dir, Path hashesPath) {
+    protected HashedDirectory(@Nonnull Path dir, @Nullable Path hashesPath) {
         this.dir = dir;
         this.hashesPath = hashesPath;
         hashes = new LinkedHashMap<>();
         try {
-            if (Files.exists(hashesPath)) {
-                for (String line : Files.readAllLines(hashesPath)) {
-                    String[] parts = line.split(" ");
-                    hashes.put(Paths.get(parts[0]),
-                            new HashedFile(Paths.get(parts[0]), dir, parts[1]));
+            if (hashesPath != null) {
+                if (Files.exists(hashesPath)) {
+                    for (String line : Files.readAllLines(hashesPath)) {
+                        String[] parts = line.split(" ");
+                        hashes.put(Paths.get(parts[0]),
+                                new HashedFile(Paths.get(parts[0]), dir, parts[1]));
+                    }
+                } else {
+                    Files.createFile(hashesPath);
                 }
-            } else {
-                Files.createFile(hashesPath);
             }
         } catch (IOException e) {
             throw new VCS.FileSystemError();
@@ -40,7 +46,7 @@ public class HashedDirectory {
      * Removes all the files from the given directory.
      * @throws IOException if a deletion error occurs.
      */
-    protected static void wipeDir(File dir) throws IOException {
+    protected static void wipeDir(@Nonnull File dir) throws IOException {
         for (File file: dir.listFiles()) {
             if (file.isDirectory()) {
                 wipeDir(file);
@@ -54,7 +60,7 @@ public class HashedDirectory {
      * @param dir the directory to delete.
      * @throws IOException if a deletion error occurs.
      */
-    protected static void deleteDir(Path dir) throws IOException {
+    protected static void deleteDir(@Nonnull Path dir) throws IOException {
         wipeDir(dir.toFile());
         Files.delete(dir);
     }
@@ -64,7 +70,7 @@ public class HashedDirectory {
      * @param dir the path to the directory to delete.
      * @throws IOException if a deletion error occurs.
      */
-    protected static void deleteDir(String dir) throws IOException {
+    protected static void deleteDir(@Nonnull String dir) throws IOException {
         deleteDir(Paths.get(dir));
     }
 
@@ -75,7 +81,7 @@ public class HashedDirectory {
      * @throws VCS.NoSuchFileException in case the provided path does not lead to a
      * valid file.
      */
-    void addFile(Path dirPath, Path filePath) throws VCS.NoSuchFileException {
+    void addFile(@Nonnull Path dirPath, @Nonnull Path filePath) throws VCS.NoSuchFileException {
         try {
             if (!Files.isRegularFile(dirPath.resolve(filePath))) {
                 throw new VCS.NoSuchFileException();
@@ -96,7 +102,7 @@ public class HashedDirectory {
      * Copies the provided directory content into the current folder.
      * @param src the directory to be copied.
      */
-    protected void cloneDirectory(HashedDirectory src) {
+    protected void cloneDirectory(@Nonnull HashedDirectory src) {
         try {
             hashes.putAll(src.hashes);
             Files.walk(src.dir).filter(Files::isRegularFile).forEach(srcPath -> {
@@ -117,6 +123,9 @@ public class HashedDirectory {
      * Writes the file hashes to the hashes file.
      */
     protected void flushHashes() {
+        if (hashesPath == null) {
+            throw new IllegalStateException();
+        }
         try {
             if (Files.exists(hashesPath)) {
                 Files.delete(hashesPath);
@@ -140,6 +149,7 @@ public class HashedDirectory {
      * Gets a map with file descriptions.
      * @return a Map from file path in the directory to its hash and absolute path.
      */
+    @Nonnull
     protected Map<Path, HashedFile> getFileDescriptions() {
         return hashes;
     }

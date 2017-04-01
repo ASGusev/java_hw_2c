@@ -1,3 +1,6 @@
+package ru.spbau.gusev.vcs;
+
+import javax.annotation.Nonnull;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -17,7 +20,6 @@ public abstract class Repository {
     protected static final String COMMITS_COUNTER_FILENAME = "commit";
     protected static final String POSITION_FILENAME = "position";
     protected static final String DEFAULT_BRANCH = "master";
-    protected static final String WORKING_DIR_HASHES = "hashes";
     private static HashedDirectory workingDirectory;
 
     /**
@@ -28,11 +30,11 @@ public abstract class Repository {
      * in the current folder.
      * @throws IllegalArgumentException if the author parameter is an empty string.
      */
-    protected static void create(String author) throws VCS.RepoAlreadyExistsException {
+    protected static void create(@Nonnull String author) throws VCS.RepoAlreadyExistsException {
         if (Files.exists(Paths.get(Repository.REPO_DIR_NAME), LinkOption.NOFOLLOW_LINKS)) {
             throw new VCS.RepoAlreadyExistsException();
         }
-        if (author.length() == 0) {
+        if (author.isEmpty()) {
             throw new IllegalArgumentException();
         }
         try {
@@ -102,6 +104,7 @@ public abstract class Repository {
      * @return a Branch object representing the current branch.
      * @throws VCS.BadRepoException if the repository folder is corrupt.
      */
+    @Nonnull
     protected static Branch getCurBranch() throws VCS.BadRepoException {
         String curBranchName;
         Path posFilePath = Paths.get(REPO_DIR_NAME, POSITION_FILENAME);
@@ -126,6 +129,7 @@ public abstract class Repository {
      * @return username.
      * @throws VCS.BadRepoException if the repository folder is corrupt.
      */
+    @Nonnull
     protected static String getUserName() throws VCS.BadRepoException {
         String username;
         try {
@@ -147,7 +151,7 @@ public abstract class Repository {
      * @param name new user name.
      * @throws VCS.BadRepoException if the repository folder is corrupt.
      */
-    protected static void setUserName(String name) throws VCS.BadRepoException {
+    protected static void setUserName(@Nonnull String name) throws VCS.BadRepoException {
         if (!Files.exists(Paths.get(REPO_DIR_NAME, USERNAME_FILE))) {
             throw new VCS.BadRepoException();
         }
@@ -164,6 +168,7 @@ public abstract class Repository {
      * @return the number of the currently heading commit.
      * @throws VCS.BadRepoException if the repository folder is corrupt.
      */
+    @Nonnull
     protected static Integer getCurrentCommitNumber() throws VCS.BadRepoException {
         int curCommit;
         Path posFilePath = Paths.get(REPO_DIR_NAME, POSITION_FILENAME);
@@ -185,6 +190,7 @@ public abstract class Repository {
      * @return a Commit object representing the currently heading commit.
      * @throws VCS.BadRepoException if the repository folder is corrupt.
      */
+    @Nonnull
     protected static Commit getCurrentCommit() throws VCS.BadRepoException {
         try {
             return new Commit(getCurrentCommitNumber());
@@ -197,7 +203,7 @@ public abstract class Repository {
      * Updates the current branch.
      * @param branch new current branch.
      */
-    protected static void setCurrentBranch(Branch branch) {
+    protected static void setCurrentBranch(@Nonnull Branch branch) {
         Path posPath = Paths.get(REPO_DIR_NAME, POSITION_FILENAME);
         try {
             List<String> pos = Files.readAllLines(posPath);
@@ -212,7 +218,7 @@ public abstract class Repository {
      * @param commit the new current commit.
      * @throws VCS.BadRepoException if the repository folder is corrupt.
      */
-    protected static void setCurrentCommit(Commit commit) throws VCS.BadRepoException {
+    protected static void setCurrentCommit(@Nonnull Commit commit) throws VCS.BadRepoException {
         Path posPath = Paths.get(REPO_DIR_NAME, POSITION_FILENAME);
         if (Files.notExists(posPath)) {
             throw new VCS.BadRepoException();
@@ -230,7 +236,7 @@ public abstract class Repository {
      * @param val new commit counter value.
      * @throws VCS.BadRepoException if the repository folder is corrupt.
      */
-    protected static void updateCommitCounter(Integer val) throws VCS.BadRepoException {
+    protected static void updateCommitCounter(@Nonnull Integer val) throws VCS.BadRepoException {
         Path counterPath = Paths.get(REPO_DIR_NAME, COMMITS_COUNTER_FILENAME);
         if (Files.notExists(counterPath)) {
             throw new VCS.BadRepoException();
@@ -246,10 +252,10 @@ public abstract class Repository {
      * Gets the working directory as a HashedDirectory object.
      * @return a HashedDirectory object representing the working directory.
      */
+    @Nonnull
     protected static HashedDirectory getWorkingDirectory() {
         if (workingDirectory == null) {
-            workingDirectory = new HashedDirectory(Paths.get("."),
-                    Paths.get(REPO_DIR_NAME, WORKING_DIR_HASHES));
+            workingDirectory = new HashedDirectory(Paths.get("."), null);
         }
         return workingDirectory;
     }
@@ -261,7 +267,7 @@ public abstract class Repository {
      * @throws VCS.BadRepoException if the repository folder is corrupt.
      * @throws VCS.NoSuchCommitException if the requested commit does not exist.
      */
-    protected static void checkoutCommit(Integer commitID) throws
+    protected static void checkoutCommit(@Nonnull Integer commitID) throws
             VCS.BadRepoException, VCS.NoSuchCommitException {
         Commit curCommit = Repository.getCurrentCommit();
         curCommit.clear();

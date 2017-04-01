@@ -1,5 +1,6 @@
-import java.io.IOException;
-import java.nio.file.Files;
+package ru.spbau.gusev.vcs;
+
+import javax.annotation.Nonnull;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -23,7 +24,7 @@ public abstract class StagingZone {
      * @throws VCS.NoSuchFileException if the supplied path does not lead to a
      * correct file.
      */
-    protected static void addFile(Path filePath) throws VCS.NoSuchFileException {
+    protected static void addFile(@Nonnull Path filePath) throws VCS.NoSuchFileException {
         STAGE_HASH_DIR.addFile(Paths.get("."), filePath);
         STAGE_HASH_DIR.flushHashes();
     }
@@ -32,6 +33,7 @@ public abstract class StagingZone {
      * Gets the stage directory.
      * @return a HashedDirectory object representing the directory with staged files.
      */
+    @Nonnull
     protected static HashedDirectory getDir() {
         return STAGE_HASH_DIR;
     }
@@ -48,7 +50,7 @@ public abstract class StagingZone {
      * Copies all files from the given directory to the staging zone.
      * @param dir the directory which contains files to be staged.
      */
-    protected static void cloneDir(HashedDirectory dir) {
+    protected static void cloneDir(@Nonnull HashedDirectory dir) {
         wipe();
         STAGE_HASH_DIR.cloneDirectory(dir);
         STAGE_HASH_DIR.flushHashes();

@@ -1,3 +1,6 @@
+package ru.spbau.gusev.vcs;
+
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -14,7 +17,7 @@ public class Branch {
     private final String name;
     private final Path commitsListPath;
 
-    private Branch(String name) throws VCS.NoSuchBranchException {
+    private Branch(@Nonnull String name) throws VCS.NoSuchBranchException {
         this.name = name;
         commitsListPath = Paths.get(Repository.REPO_DIR_NAME,
                 Repository.BRANCHES_DIR_NAME, name);
@@ -31,8 +34,12 @@ public class Branch {
      * name already exists in the repository.
      * @throws VCS.BadRepoException if the repository folder is corrupt.
      */
-    protected static Branch create(String name) throws VCS.BranchAlreadyExistsException,
+    @Nonnull
+    protected static Branch create(@Nonnull String name) throws VCS.BranchAlreadyExistsException,
             VCS.BadRepoException {
+        if (name.isEmpty()) {
+            throw new IllegalArgumentException();
+        }
         Path descPath = Paths.get(Repository.REPO_DIR_NAME,
                 Repository.BRANCHES_DIR_NAME, name);
         if (Files.exists(descPath)) {
@@ -59,10 +66,16 @@ public class Branch {
      * @return an object representing the requested branch.
      * @throws VCS.NoSuchBranchException if the requested branch does not exist.
      */
-    protected static Branch getByName(String name) throws VCS.NoSuchBranchException {
+    @Nonnull
+    protected static Branch getByName(@Nonnull String name) throws VCS.NoSuchBranchException {
         return new Branch(name);
     }
 
+    /**
+     * Gets the name of the branch.
+     * @return the name of the branch.
+     */
+    @Nonnull
     protected String getName() {
         return name;
     }
@@ -71,7 +84,7 @@ public class Branch {
      * Adds a commit to the end of the branch.
      * @param newCommit a commit to add.
      */
-    protected void addCommit(Commit newCommit) {
+    protected void addCommit(@Nonnull Commit newCommit) {
         try {
             Files.write(commitsListPath, (newCommit.getNumber().toString() + '\n')
                             .getBytes(), StandardOpenOption.APPEND);
@@ -85,6 +98,7 @@ public class Branch {
      * @return the number of hte last commit in the branch.
      * @throws VCS.BadRepoException if the repository folder is corrupt.
      */
+    @Nonnull
     protected Integer getHeadNumber() throws VCS.BadRepoException {
         String headNumber = "-1";
         try (Scanner scanner = new Scanner(commitsListPath)) {
@@ -106,6 +120,7 @@ public class Branch {
      * @return a Commit object representing the branch's head commit.
      * @throws VCS.BadRepoException if the repository folder is corrupt.
      */
+    @Nonnull
     protected Commit getHead() throws VCS.BadRepoException {
         try {
             return new Commit(getHeadNumber());
@@ -119,6 +134,7 @@ public class Branch {
      * @return a list with descriptions of all commits of the branch.
      * @throws VCS.BadRepoException if the repository folder is corrupt.
      */
+    @Nonnull
     protected List<VCS.CommitDescription> getLog() throws VCS.BadRepoException {
         List<VCS.CommitDescription> commitList;
         try {

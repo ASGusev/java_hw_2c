@@ -1,3 +1,6 @@
+package ru.spbau.gusev.vcs;
+
+import javax.annotation.Nonnull;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
@@ -14,7 +17,8 @@ public abstract class Merger {
      * @throws VCS.BadPositionException if the current position is not a head of a
      * branch.
      */
-    protected static Commit merge(Branch branchToMerge) throws VCS.BadRepoException,
+    @Nonnull
+    protected static Commit merge(@Nonnull Branch branchToMerge) throws VCS.BadRepoException,
             VCS.BadPositionException{
         Commit curCommit = Repository.getCurrentCommit();
         Commit commitToMerge = branchToMerge.getHead();

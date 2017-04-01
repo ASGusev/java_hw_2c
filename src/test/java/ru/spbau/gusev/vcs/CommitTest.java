@@ -1,3 +1,5 @@
+package ru.spbau.gusev.vcs;
+
 import org.junit.Assert;
 import org.junit.Test;
 

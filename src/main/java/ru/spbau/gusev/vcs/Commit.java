@@ -1,3 +1,6 @@
+package ru.spbau.gusev.vcs;
+
+import javax.annotation.Nonnull;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -14,26 +17,58 @@ public class Commit {
     protected static final String COMMIT_METADATA_FILE = "metadata";
     protected static final String COMMIT_FILES_LIST = "files_list";
 
+    /**
+     * Gets the commit number.
+     * @return the commit number.
+     */
+    @Nonnull
     protected Integer getNumber() {
         return number;
     }
 
+    /**
+     * Gets the commit creation time. Time is measured in millisecond from the beginning
+     * of the UNIX epoch.
+     * @return the commit creation time.
+     */
+    @Nonnull
     protected long getCreationTime() {
         return creationTime;
     }
 
+    /**
+     * Gets the commit message.
+     * @return the commit message.
+     */
+    @Nonnull
     protected String getMessage() {
         return message;
     }
 
+    /**
+     * Gets the branch that this commit belongs to.
+     * @return the branch that this commit belongs to.
+     */
+    @Nonnull
     protected Branch getBranch() {
         return branch;
     }
 
+    /**
+     * Gets the commit author's username.
+     * @return the commit author's username.
+     */
+    @Nonnull
     protected String getAuthor() {
         return author;
     }
 
+    /**
+     * Gets the parental commit, the commit which was the global head before this
+     * commit creation.
+     * @return the parental commit.
+     */
+    @Nonnull
     protected Commit getFather() throws VCS.BadRepoException {
         try {
             return new Commit(father);
@@ -57,11 +92,14 @@ public class Commit {
      * @throws VCS.BadRepoException if the repository folder is corrupt.
      * @throws VCS.BadPositionException if current commit is not the head of its branch.
      */
-    protected Commit(String message) throws VCS.BadRepoException,
+    protected Commit(@Nonnull String message) throws VCS.BadRepoException,
             VCS.BadPositionException {
         if (Files.notExists(Paths.get(Repository.REPO_DIR_NAME,
                 Repository.COMMITS_DIR_NAME))) {
             throw new VCS.BadRepoException();
+        }
+        if (message.isEmpty()) {
+            throw new IllegalArgumentException();
         }
 
         number = Repository.getCommitsNumber();
@@ -114,7 +152,7 @@ public class Commit {
      * exist.
      * @throws VCS.BadRepoException if the repository data folder is corrupt.
      */
-    protected Commit(Integer number) throws VCS.NoSuchCommitException,
+    protected Commit(@Nonnull Integer number) throws VCS.NoSuchCommitException,
             VCS.BadRepoException {
         this.number = number;
         rootDir = Paths.get(Repository.REPO_DIR_NAME, Repository.COMMITS_DIR_NAME,
@@ -133,9 +171,10 @@ public class Commit {
 
             StringBuilder messageBuilder = new StringBuilder();
             metadataScanner.nextLine();
+            messageBuilder.append(metadataScanner.nextLine());
             while (metadataScanner.hasNext()) {
-                messageBuilder.append(metadataScanner.nextLine());
                 messageBuilder.append('\n');
+                messageBuilder.append(metadataScanner.nextLine());
             }
             message = messageBuilder.toString();
         } catch (IOException e) {
@@ -199,6 +238,7 @@ public class Commit {
      * creation time.
      * @throws VCS.BadRepoException if the repository folder is corrupt.
      */
+    @Nonnull
     protected List<Commit> getPedigree() throws VCS.BadRepoException {
         ArrayList<Commit> pedigree = new ArrayList<>();
         pedigree.add(this);
@@ -228,6 +268,7 @@ public class Commit {
      * working directory.
      * @return a Map from file path to its description.
      */
+    @Nonnull
     public Map<Path, HashedFile> getFileDescriptions() {
         return new HashedDirectory(rootDir.resolve(COMMIT_CONTENT_DIR),
                 rootDir.resolve(COMMIT_FILES_LIST)).getFileDescriptions();
