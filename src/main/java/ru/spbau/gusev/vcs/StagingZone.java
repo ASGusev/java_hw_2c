@@ -68,15 +68,21 @@ public abstract class StagingZone {
     /**
      * Removes the file pointed by given path from staging zone.
      * @param file the path pointing to the staged file to delete.
-     * @throws VCS.NoSuchFileException if the given path does not point to any staged files.
+     * @return true if a file with the given path was removed from the staging zone,
+     * false if it had not been staged.
      */
-    protected static void removeFile(@Nonnull Path file) throws VCS.NoSuchFileException,
-            VCS.BadRepoException {
+    protected static boolean removeFile(@Nonnull Path file) throws VCS.BadRepoException {
         if (!Files.exists(STAGE_PATH)) {
             throw new VCS.BadRepoException();
         }
-        STAGE_HASH_DIR.deleteFile(file);
-        STAGE_HASH_DIR.flushHashes();
+
+        try {
+            STAGE_HASH_DIR.deleteFile(file);
+            STAGE_HASH_DIR.flushHashes();
+        } catch (VCS.NoSuchFileException e) {
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -85,6 +91,6 @@ public abstract class StagingZone {
      * @return true if a file with given path exists in the staging zone, false otherwise.
      */
     protected static boolean contains(@Nonnull Path filePath) {
-        return Files.isRegularFile(STAGE_PATH.resolve(filePath));
+        return STAGE_HASH_DIR.contains(filePath);
     }
 }

@@ -197,12 +197,7 @@ public class Commit {
             Files.walk(contentDir)
                     .filter(Files::isRegularFile)
                     .forEach(path -> {
-                        try {
-                            Files.delete(contentDir.relativize(path));
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                            throw new VCS.FileSystemError();
-                        }
+                        WorkingDirectory.deleteFile(contentDir.relativize(path));
                     });
             Files.walk(contentDir)
                     .forEach(path -> {

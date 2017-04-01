@@ -149,14 +149,10 @@ public class VCS {
             BadRepoException {
         Path filePath = Paths.get(filename);
 
-        if (!WorkingDirectory.contains(filePath) && !StagingZone.contains(filePath)) {
+        boolean existedInWorkingDirectory = WorkingDirectory.deleteFile(filePath);
+        boolean wasInStagingZone = StagingZone.removeFile(filePath);
+        if (!existedInWorkingDirectory && !wasInStagingZone) {
             throw new NoSuchFileException();
-        }
-        if (WorkingDirectory.contains(filePath)) {
-            WorkingDirectory.deleteFile(filePath);
-        }
-        if (StagingZone.contains(filePath)) {
-            StagingZone.removeFile(filePath);
         }
     }
 
@@ -168,6 +164,14 @@ public class VCS {
             NoSuchFileException {
         Path filePath = Paths.get(filename);
         Repository.getCurrentCommit().resetFile(filePath);
+    }
+
+    /**
+     * Removes all the files that have not been added to the repository from
+     * the working directory.
+     */
+    public static void clean() {
+        WorkingDirectory.clean();
     }
 
     /**

@@ -228,4 +228,13 @@ public class HashedDirectory {
             throw new VCS.FileSystemError();
         }
     }
+
+    /**
+     * Checks if a file with the given path exists in the directory.
+     * @param filePath the path to the file to check.
+     * @return true if such file exists, false if it doesn't.
+     */
+    protected boolean contains(@Nonnull Path filePath) {
+        return Files.isRegularFile(dir.resolve(filePath));
+    }
 }

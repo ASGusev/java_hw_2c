@@ -16,13 +16,15 @@ public abstract class WorkingDirectory {
     private final static Path IGNORE_LIST_PATH = Paths.get(IGNORE_LIST_FILENAME);
 
     static {
+        //Files with paths beginning with the paths listed in the .ignore file are not tracked.
         ignoredPaths = new ArrayList<>();
-        ignoredPaths.add(Paths.get(Repository.REPO_DIR_NAME));
+        ignoredPaths.add(Paths.get(".", Repository.REPO_DIR_NAME));
+        ignoredPaths.add(Paths.get(".", IGNORE_LIST_FILENAME));
         if (Files.exists(IGNORE_LIST_PATH)) {
             try {
                 for (String line: Files.readAllLines(IGNORE_LIST_PATH)) {
                     try {
-                        ignoredPaths.add(Paths.get(line));
+                        ignoredPaths.add(Paths.get(".", line));
                     } catch (InvalidPathException e) {}
                 }
             } catch (IOException e) {
@@ -69,11 +71,11 @@ public abstract class WorkingDirectory {
     /**
      * Deletes the file by the given path from the working directory.
      * @param filePath the path to the file to delete.
-     * @throws VCS.NoSuchFileException if a file with the given path does not exist.
+     * @return true if a file with given path was deleted, false if it didn't exist.
      */
-    protected static void deleteFile(@Nonnull Path filePath) throws VCS.NoSuchFileException {
+    protected static boolean deleteFile(@Nonnull Path filePath) {
         if (!Files.exists(filePath)) {
-            throw new VCS.NoSuchFileException();
+            return false;
         }
 
         try {
@@ -81,6 +83,7 @@ public abstract class WorkingDirectory {
         } catch (IOException e) {
             throw new VCS.FileSystemError();
         }
+        return true;
     }
 
     /**
@@ -90,5 +93,32 @@ public abstract class WorkingDirectory {
      */
     protected static boolean contains(@Nonnull Path filePath) {
         return Files.isRegularFile(filePath);
+    }
+
+    protected static void clean() {
+        try {
+            Files.walk(WORKING_DIR)
+                    .filter(Files::isRegularFile)
+                    .filter(WorkingDirectory::isNotIgnored)
+                    .filter(path -> !StagingZone.contains(path))
+                    .forEach(path -> {
+                        try {
+                            Files.delete(path);
+                        } catch (IOException e) {
+                            throw new VCS.FileSystemError();
+                        }
+                    });
+        } catch (IOException e) {
+            throw new VCS.FileSystemError();
+        }
+    }
+
+    private static boolean isNotIgnored(Path path) {
+        for (Path ignored: ignoredPaths) {
+            if (path.startsWith(ignored)) {
+                return false;
+            }
+        }
+        return true;
     }
 }

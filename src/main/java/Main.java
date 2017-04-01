@@ -49,6 +49,10 @@ public class Main {
                     reset(args);
                     break;
                 }
+                case "clean": {
+                    VCS.clean();
+                    break;
+                }
 
                 default: {
                     showHelp();
@@ -73,7 +77,9 @@ public class Main {
         "rm <filename> - removes the file with given name from the working directory " +
                 "and stage\n" +
         "reset <filename> - restores the file with given name to the state captured " +
-                "in the current head commit");
+                "in the current head commit\n" +
+        "clean - removes from the working directory all the files that have not been " +
+                "added to the repository");
     }
 
     private static void init(@Nonnull String[] args) {
