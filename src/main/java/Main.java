@@ -7,7 +7,9 @@ public class Main {
     public static void main(String[] args) {
         if (args.length == 0) {
             showHelp();
-        } else {
+            return;
+        }
+        try {
             switch (args[0]) {
                 case "init": {
                     init(args);
@@ -62,6 +64,10 @@ public class Main {
                     showHelp();
                 }
             }
+        } catch (VCS.FileSystemError e) {
+            System.out.println("File system error.");
+        } catch (Throwable t) {
+            System.out.println("Unknown error.");
         }
     }
 
@@ -95,8 +101,6 @@ public class Main {
                 VCS.createRepo(args[1]);
             } catch (VCS.RepoAlreadyExistsException e) {
                 System.out.println("Repo already exists.");
-            } catch (VCS.FileSystemError e) {
-                System.out.println("File system error.");
             }
         }
     }
@@ -144,8 +148,6 @@ public class Main {
                     } catch (VCS.BranchAlreadyExistsException e) {
                         System.out.println("A branch with this name " +
                                 "already exists.");
-                    } catch (VCS.FileSystemError e) {
-                        System.out.println("Filesystem error");
                     }
                     break;
                 }
@@ -155,8 +157,6 @@ public class Main {
                     } else {
                         try {
                             VCS.deleteBranch(args[2]);
-                        } catch (VCS.FileSystemError e) {
-                            System.out.println("Filesystem error");
                         } catch (VCS.BadRepoException e) {
                             System.out.println("Incorrect repo");
                         } catch (VCS.NoSuchBranchException e) {
@@ -181,9 +181,11 @@ public class Main {
     private static void showLog() {
         try {
             List<VCS.CommitDescription> commits = VCS.getLog();
+            String curBranchName = VCS.getCurBranch();
             if (commits.isEmpty()) {
-                System.out.println("No commits in current branch yet.");
+                System.out.printf("No commits in branch %s yet.\n", curBranchName);
             } else {
+                System.out.printf("Commits in branch %s:\n", curBranchName);
                 System.out.printf("%4s%12s %12s%8s %s\n", "ID", "Author",
                         "Date", "Time", "Message");
                 commits.forEach(commit ->
@@ -192,8 +194,6 @@ public class Main {
                                 commit.getTime(), commit.getMessage())
                 );
             }
-        } catch (VCS.FileSystemError e) {
-            System.out.println("Filesystem error");
         } catch (VCS.BadRepoException | VCS.NoSuchBranchException e) {
             System.out.println("Incorrect repo");
         }

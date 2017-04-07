@@ -214,6 +214,16 @@ public class VCS {
     }
 
     /**
+     * Gets name of current branch.
+     * @return the name of the current branch.
+     * @throws BadRepoException if the repository folder is corrupt.
+     */
+    @Nonnull
+    public static String getCurBranch() throws BadRepoException {
+        return Repository.getCurBranch().getName();
+    }
+
+    /**
      * A class representing a commit object for interface.
      */
     public static class CommitDescription {

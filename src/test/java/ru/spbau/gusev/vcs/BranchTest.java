@@ -64,7 +64,7 @@ public class BranchTest {
             Commit commit = new Commit(COMMIT_MESSAGE);
             Branch branch = Repository.getCurBranch();
             List<VCS.CommitDescription> log = branch.getLog();
-            VCS.CommitDescription commitDescription = log.get(1);
+            VCS.CommitDescription commitDescription = log.get(0);
 
             Assert.assertEquals((long)commit.getNumber(), commitDescription.getNumber());
             Assert.assertEquals(commit.getAuthor(), commitDescription.getAuthor());
