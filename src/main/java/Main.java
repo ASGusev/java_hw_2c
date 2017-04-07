@@ -181,13 +181,17 @@ public class Main {
     private static void showLog() {
         try {
             List<VCS.CommitDescription> commits = VCS.getLog();
-            System.out.printf("%4s%12s %12s%8s %s\n", "ID", "Author",
-                    "Date", "Time", "Message");
-            commits.forEach(commit ->
-                    System.out.printf("%4d%12s  %3$tF %3$tT %4$s\n",
-                            commit.getNumber(), commit.getAuthor(),
-                            commit.getTime(), commit.getMessage())
-            );
+            if (commits.isEmpty()) {
+                System.out.println("No commits in current branch yet.");
+            } else {
+                System.out.printf("%4s%12s %12s%8s %s\n", "ID", "Author",
+                        "Date", "Time", "Message");
+                commits.forEach(commit ->
+                        System.out.printf("%4d%12s  %3$tF %3$tT %4$s\n",
+                                commit.getNumber(), commit.getAuthor(),
+                                commit.getTime(), commit.getMessage())
+                );
+            }
         } catch (VCS.FileSystemError e) {
             System.out.println("Filesystem error");
         } catch (VCS.BadRepoException | VCS.NoSuchBranchException e) {

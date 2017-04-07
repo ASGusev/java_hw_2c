@@ -138,7 +138,7 @@ public class Branch {
     protected List<VCS.CommitDescription> getLog() throws VCS.BadRepoException {
         List<VCS.CommitDescription> commitList;
         try {
-            commitList = Files.lines(commitsListPath).map(number -> {
+            commitList = Files.lines(commitsListPath).skip(1).map(number -> {
                 try {
                     Commit commit = new Commit(Integer.valueOf(number));
                     return new VCS.CommitDescription(commit);
