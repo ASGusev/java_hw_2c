@@ -25,7 +25,9 @@ public class CommitTest {
         try {
             VCS.createRepo(USERNAME);
             Files.write(Paths.get(TEST_FILE_NAME), TEST_CONTENT.getBytes());
-            Repository.getStagingZone().addFile(WorkingDirectory.getHashedFileByName(TEST_FILE_NAME));
+            HashedFile testFile = Repository.getWorkingDirectory().
+                    getHashedFile(TEST_FILE_NAME);
+            Repository.getStagingZone().addFile(testFile);
             Commit commit = new Commit(MESSAGE);
             Path commitDir = Paths.get(Repository.REPO_DIR_NAME, Repository.COMMITS_DIR_NAME,
                     commit.getNumber().toString());

@@ -1,7 +1,6 @@
 package ru.spbau.gusev.vcs;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
 import java.nio.file.*;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -53,7 +52,8 @@ public class VCS {
      * @throws NoSuchFileException if the given path does not lead to a file.
      */
     public static void addFile(@Nonnull String path) throws BadRepoException, NoSuchFileException {
-        Repository.getStagingZone().addFile(WorkingDirectory.getHashedFileByName(path));
+        HashedFile file = Repository.getWorkingDirectory().getHashedFile(path);
+        Repository.getStagingZone().addFile(file);
     }
 
     /**
@@ -153,7 +153,7 @@ public class VCS {
         if (!Repository.getStagingZone().removeFile(filePath)) {
             throw new NoSuchFileException();
         }
-        WorkingDirectory.deleteFile(filePath);
+        Repository.getWorkingDirectory().deleteFile(filePath);
     }
 
     /**
@@ -172,7 +172,7 @@ public class VCS {
      */
     public static void clean() throws BadRepoException {
         final StagingZone stagingZone = Repository.getStagingZone();
-        WorkingDirectory.removeIf(stagingZone::contains);
+        Repository.getWorkingDirectory().deleteIf(stagingZone::contains);
     }
 
     /**
@@ -189,7 +189,7 @@ public class VCS {
                     HashedFile fileInCommit = currentCommit.getHashedFile(file.getPath());
                     return  (fileInCommit == null || !file.equals(fileInCommit));
                 })
-                .map(file -> file.getPath().toString())
+                .map(HashedFile::toString)
                 .collect(Collectors.toList());
     }
 
@@ -201,12 +201,12 @@ public class VCS {
     @Nonnull
     public static List<String> getChanged() throws BadRepoException {
         final StagingZone stagingZone = Repository.getStagingZone();
-        return WorkingDirectory.getFiles()
+        return Repository.getWorkingDirectory().getFiles()
                 .filter(file -> {
                     HashedFile stagedFile = stagingZone.getHashedFile(file.getPath());
                     return !file.equals(stagedFile);
                 })
-                .map(file -> file.getPath().toString())
+                .map(HashedFile::toString)
                 .collect(Collectors.toList());
     }
 
@@ -218,9 +218,9 @@ public class VCS {
     @Nonnull
     public static List<String> getCreated() throws BadRepoException {
         final StagingZone stagingZone = Repository.getStagingZone();
-        return WorkingDirectory.getFiles()
+        return Repository.getWorkingDirectory().getFiles()
                 .filter(file -> !stagingZone.contains(file.getPath()))
-                .map(file -> file.getPath().toString())
+                .map(HashedFile::toString)
                 .collect(Collectors.toList());
     }
 
