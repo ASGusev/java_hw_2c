@@ -44,11 +44,9 @@ public class WorkingDirectoryTest {
             Files.createDirectory(testDir);
             WorkingDirectory workingDirectory = new WorkingDirectory(testDir);
             Files.write(testDir.resolve(filePath), fileContent.getBytes());
-            workingDirectory.deleteFile(filePath);
+            workingDirectory.delete(filePath);
 
-            Assert.assertTrue(Files.isRegularFile(testDir.resolve(filePath)));
-            Assert.assertEquals(Collections.singletonList(fileContent),
-                    Files.readAllLines(testDir.resolve(filePath)));
+            Assert.assertTrue(Files.notExists(testDir.resolve(filePath)));
         } finally {
             HashedDirectory.deleteDir(testDir);
         }

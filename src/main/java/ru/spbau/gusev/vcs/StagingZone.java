@@ -4,8 +4,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -32,7 +30,7 @@ public class StagingZone {
      * @param file the file to add represented by a HashedFile object.
      */
     protected void addFile(@Nonnull HashedFile file) {
-        stageHashDir.copyFile(file);
+        stageHashDir.add(file);
         stageHashDir.flushHashes();
     }
 
@@ -41,16 +39,6 @@ public class StagingZone {
      */
     protected void wipe() {
         stageHashDir.clear();
-        stageHashDir.flushHashes();
-    }
-
-    /**
-     * Copies all files from the given directory to the staging zone.
-     * @param dir the directory which contains files to be staged.
-     */
-    protected void cloneDir(@Nonnull HashedDirectory dir) {
-        wipe();
-        stageHashDir.cloneDirectory(dir);
         stageHashDir.flushHashes();
     }
 

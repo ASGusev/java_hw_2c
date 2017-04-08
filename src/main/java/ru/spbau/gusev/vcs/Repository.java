@@ -262,9 +262,9 @@ public abstract class Repository {
     protected static void checkoutCommit(@Nonnull Integer commitID) throws
             VCS.BadRepoException, VCS.NoSuchCommitException {
         Commit curCommit = Repository.getCurrentCommit();
-        curCommit.clear();
+        curCommit.removeFrom(getWorkingDirectory());
         Commit newCommit = new Commit(commitID);
-        newCommit.checkout();
+        newCommit.checkout(workingDirectory);
     }
 
     /**

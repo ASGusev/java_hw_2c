@@ -4,9 +4,7 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -47,9 +45,6 @@ public class WorkingDirectory {
                     toAbsolutePath().getParent());
             Files.copy(file.getFullPath(), workingDir.resolve(file.getPath()),
                     StandardCopyOption.REPLACE_EXISTING);
-
-            //hashedFiles.put(file.getPath(), new HashedFile(file.getPath(), workingDir,
-            //        file.getHash()));
         } catch (IOException e) {
             throw new VCS.FileSystemError();
         }
@@ -74,17 +69,21 @@ public class WorkingDirectory {
 
     /**
      * Deletes the file by the given path from the working directory.
-     * @param filePath the path to the file to delete.
+     * @param path the path to the file to delete.
      * @return true if a file with given path was deleted, false if it didn't exist.
      */
-    protected boolean deleteFile(@Nonnull Path filePath) {
-        if (!Files.exists(filePath)) {
+    protected boolean delete(@Nonnull Path path) {
+        path = workingDir.resolve(path);
+        if (!Files.exists(path)) {
             return false;
         }
 
         try {
-            Files.delete(filePath);
-            //hashedFiles.remove(filePath);
+            if (Files.isRegularFile(path)) {
+                Files.delete(path);
+            } else {
+                HashedDirectory.deleteDir(path);
+            }
         } catch (IOException e) {
             throw new VCS.FileSystemError();
         }

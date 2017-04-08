@@ -92,51 +92,6 @@ public class HashedDirectory {
     }
 
     /**
-     * Copies a file to the directory.
-     * @param dirPath the path to a working dir containing file.
-     * @param filePath the resting path from the working dir to the file to copy.
-     * @throws VCS.NoSuchFileException in case the provided path does not lead to a
-     * valid file.
-     */
-    void addFile(@Nonnull Path dirPath, @Nonnull Path filePath) throws VCS.NoSuchFileException {
-        try {
-            if (!Files.isRegularFile(dirPath.resolve(filePath))) {
-                throw new VCS.NoSuchFileException();
-            }
-
-            Files.createDirectories(dir.resolve(filePath).getParent());
-            Files.copy(dirPath.resolve(filePath), dir.resolve(filePath),
-                    StandardCopyOption.REPLACE_EXISTING);
-
-            hashes.put(filePath,
-                    new HashedFile(Paths.get(dir.resolve(filePath).toString()), dir));
-        } catch (IOException e) {
-            throw new VCS.FileSystemError();
-        }
-    }
-
-    /**
-     * Copies the provided directory content into the current folder.
-     * @param src the directory to be copied.
-     */
-    protected void cloneDirectory(@Nonnull HashedDirectory src) {
-        try {
-            hashes.putAll(src.hashes);
-            Files.walk(src.dir).filter(Files::isRegularFile).forEach(srcPath -> {
-                try {
-                    Path targetPath = dir.resolve(src.dir.relativize(srcPath));
-                    Files.createDirectories(targetPath.getParent());
-                    Files.copy(srcPath, targetPath, StandardCopyOption.REPLACE_EXISTING);
-                } catch (IOException e) {
-                    throw new VCS.FileSystemError();
-                }
-            });
-        } catch (IOException e) {
-            throw new VCS.FileSystemError();
-        }
-    }
-
-    /**
      * Writes the file hashes to the hashes file.
      */
     protected void flushHashes() {
@@ -184,26 +139,10 @@ public class HashedDirectory {
     }
 
     /**
-     * Recalculates hashes for all files in the directory.
-     */
-    protected void updateHashes() {
-        hashes.clear();
-        try {
-            Files.walk(dir)
-                    .filter(Files::isRegularFile)
-                    .forEach(path -> {
-                        hashes.put(path, new HashedFile(dir, path));
-                    });
-        } catch (IOException e) {
-            throw new VCS.FileSystemError();
-        }
-    }
-
-    /**
      * Copies a file represented by a HashedFile object into the folder.
      * @param file the file to copy.
      */
-    protected void copyFile(@Nonnull HashedFile file) {
+    protected void add(@Nonnull HashedFile file) {
         try {
             Path newFilePath = dir.resolve(file.getPath());
 

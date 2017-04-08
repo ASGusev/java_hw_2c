@@ -153,7 +153,7 @@ public class VCS {
         if (!Repository.getStagingZone().removeFile(filePath)) {
             throw new NoSuchFileException();
         }
-        Repository.getWorkingDirectory().deleteFile(filePath);
+        Repository.getWorkingDirectory().delete(filePath);
     }
 
     /**
@@ -163,7 +163,8 @@ public class VCS {
     public static void reset(@Nonnull String filename) throws BadRepoException,
             NoSuchFileException {
         Path filePath = Paths.get(filename);
-        Repository.getCurrentCommit().resetFile(filePath);
+        Repository.getCurrentCommit().resetFile(filePath,
+                Repository.getWorkingDirectory());
     }
 
     /**

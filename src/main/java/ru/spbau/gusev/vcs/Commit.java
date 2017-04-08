@@ -133,7 +133,7 @@ public class Commit {
 
             contentDir = new HashedDirectory(rootDir.resolve(COMMIT_CONTENT_DIR),
                     rootDir.resolve(COMMIT_FILES_LIST));
-            Repository.getStagingZone().getFiles().forEach(contentDir::copyFile);
+            Repository.getStagingZone().getFiles().forEach(contentDir::add);
             contentDir.flushHashes();
 
             branch.addCommit(this);
@@ -190,26 +190,16 @@ public class Commit {
     }
 
     /**
-     * Removes all the commit's files from the working directory.
+     * Removes all the commit's files from the given working directory.
+     * @param directory the directory from which the commit files should be removed.
      */
-    protected void clear() {
+    protected void removeFrom(@Nonnull WorkingDirectory directory) {
         Path contentDir = rootDir.resolve(COMMIT_CONTENT_DIR);
         try {
-            WorkingDirectory workingDirectory = Repository.getWorkingDirectory();
             Files.walk(contentDir)
                     .filter(Files::isRegularFile)
                     .forEach(path -> {
-                        workingDirectory.deleteFile(contentDir.relativize(path));
-                    });
-            Files.walk(contentDir)
-                    .forEach(path -> {
-                        try {
-                            if (Files.isDirectory(path) && !path.equals(contentDir)) {
-                                HashedDirectory.deleteDir(contentDir.relativize(path));
-                            }
-                        } catch (IOException e) {
-                            throw new VCS.FileSystemError();
-                        }
+                        directory.delete(contentDir.relativize(path));
                     });
         } catch (IOException e) {
             throw new VCS.FileSystemError();
@@ -217,15 +207,17 @@ public class Commit {
     }
 
     /**
-     * Copies all the files from the commit to the working directory and sets
+     * Copies all the files from the commit to the given working directory and sets
      * this commit as global head.
+     * @param directory the directory which the commit files should be copied to.
      * @throws VCS.BadRepoException if the repository folder is corrupt.
      */
-    protected void checkout() throws VCS.BadRepoException {
-        WorkingDirectory workingDirectory = Repository.getWorkingDirectory();
-        contentDir.getFiles().forEach(workingDirectory::add);
+    protected void checkout(@Nonnull WorkingDirectory directory) throws
+            VCS.BadRepoException {
+        contentDir.getFiles().forEach(directory::add);
 
-        Repository.getStagingZone().cloneDir(contentDir);
+        final StagingZone stagingZone = Repository.getStagingZone();
+        contentDir.getFiles().forEach(stagingZone::addFile);
 
         Repository.setCurrentCommit(this);
     }
@@ -276,16 +268,18 @@ public class Commit {
      * Restores file with given path in the working directory to the its condition at
      * the moment of commit creation.
      * @param filePath the path to the file to restore.
+     * @param directory the directory where the file should be reset.
      */
-    protected void resetFile(@Nonnull Path filePath) throws VCS.NoSuchFileException {
+    protected void resetFile(@Nonnull Path filePath,
+                             @Nonnull WorkingDirectory directory)
+            throws VCS.NoSuchFileException {
         if (!Files.isRegularFile(rootDir.resolve(COMMIT_CONTENT_DIR).resolve(filePath))) {
             throw new VCS.NoSuchFileException();
         }
 
         HashedFile hashedFile = new HashedFile(filePath,
                 rootDir.resolve(COMMIT_CONTENT_DIR));
-        WorkingDirectory workingDirectory = Repository.getWorkingDirectory();
-        workingDirectory.add(hashedFile);
+        directory.add(hashedFile);
     }
 
     /**

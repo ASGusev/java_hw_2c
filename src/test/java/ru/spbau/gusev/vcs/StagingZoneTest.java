@@ -3,7 +3,6 @@ package ru.spbau.gusev.vcs;
 import org.junit.Assert;
 import org.junit.Test;
 
-import javax.print.DocFlavor;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
