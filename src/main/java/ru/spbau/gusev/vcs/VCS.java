@@ -4,6 +4,7 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * An class containing VCS public API methods.
@@ -52,7 +53,7 @@ public class VCS {
      * @throws NoSuchFileException if the given path does not lead to a file.
      */
     public static void addFile(@Nonnull String path) throws BadRepoException, NoSuchFileException {
-        StagingZone.addFile(WorkingDirectory.getHashedFileByName(path));
+        Repository.getStagingZone().addFile(WorkingDirectory.getHashedFileByName(path));
     }
 
     /**
@@ -149,7 +150,7 @@ public class VCS {
             BadRepoException {
         Path filePath = Paths.get(filename);
 
-        if (!StagingZone.removeFile(filePath)) {
+        if (!Repository.getStagingZone().removeFile(filePath)) {
             throw new NoSuchFileException();
         }
         WorkingDirectory.deleteFile(filePath);
@@ -169,8 +170,9 @@ public class VCS {
      * Removes all the files that have not been added to the repository from
      * the working directory.
      */
-    public static void clean() {
-        WorkingDirectory.clean();
+    public static void clean() throws BadRepoException {
+        final StagingZone stagingZone = Repository.getStagingZone();
+        WorkingDirectory.removeIf(stagingZone::contains);
     }
 
     /**
@@ -181,7 +183,14 @@ public class VCS {
      */
     @Nonnull
     public static List<String> getStaged() throws BadRepoException {
-        return StagingZone.getStagedFiles();
+        Commit currentCommit = Repository.getCurrentCommit();
+        return Repository.getStagingZone().getFiles()
+                .filter(file -> {
+                    HashedFile fileInCommit = currentCommit.getHashedFile(file.getPath());
+                    return  (fileInCommit == null || !file.equals(fileInCommit));
+                })
+                .map(file -> file.getPath().toString())
+                .collect(Collectors.toList());
     }
 
     /**
@@ -190,8 +199,15 @@ public class VCS {
      * @return a list containing names of all changed files.
      */
     @Nonnull
-    public static List<String> getChanged() {
-        return WorkingDirectory.getChangedFiles();
+    public static List<String> getChanged() throws BadRepoException {
+        final StagingZone stagingZone = Repository.getStagingZone();
+        return WorkingDirectory.getFiles()
+                .filter(file -> {
+                    HashedFile stagedFile = stagingZone.getHashedFile(file.getPath());
+                    return !file.equals(stagedFile);
+                })
+                .map(file -> file.getPath().toString())
+                .collect(Collectors.toList());
     }
 
     /**
@@ -200,8 +216,12 @@ public class VCS {
      * @return a List containing names of all files that are not in the repository.
      */
     @Nonnull
-    public static List<String> getCreated() {
-        return WorkingDirectory.getCreatedFiles();
+    public static List<String> getCreated() throws BadRepoException {
+        final StagingZone stagingZone = Repository.getStagingZone();
+        return WorkingDirectory.getFiles()
+                .filter(file -> !stagingZone.contains(file.getPath()))
+                .map(file -> file.getPath().toString())
+                .collect(Collectors.toList());
     }
 
     /**

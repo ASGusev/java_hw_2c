@@ -61,8 +61,9 @@ public abstract class Merger {
             }
         });
 
-        StagingZone.wipe();
-        resFiles.forEach((path, desc) -> StagingZone.addFile(desc));
+        StagingZone stagingZone = Repository.getStagingZone();
+        stagingZone.wipe();
+        resFiles.forEach((path, desc) -> stagingZone.addFile(desc));
 
         Commit mergedCommit = new Commit("Branch " + branchToMerge.getName() + " merged.");
         curCommit.clear();

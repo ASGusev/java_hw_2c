@@ -20,7 +20,10 @@ public abstract class Repository {
     protected static final String COMMITS_COUNTER_FILENAME = "commit";
     protected static final String POSITION_FILENAME = "position";
     protected static final String DEFAULT_BRANCH = "master";
-    private static HashedDirectory workingDirectory;
+    protected static final String STAGE_DIR = "stage";
+    protected static final String STAGE_LIST = "stage_list";
+
+    private static StagingZone stage;
 
     /**
      * Initialises a repository in the current directory. A folder with all the
@@ -48,9 +51,9 @@ public abstract class Repository {
                     "0".getBytes());
 
             //Creating stage directory
-            Files.createDirectory(Paths.get(REPO_DIR_NAME, StagingZone.STAGE_DIR));
-            Files.createFile(Paths.get(REPO_DIR_NAME, StagingZone.STAGE_LIST));
-            StagingZone.wipe();
+            Files.createDirectory(Paths.get(REPO_DIR_NAME, STAGE_DIR));
+            Files.createFile(Paths.get(REPO_DIR_NAME, STAGE_LIST));
+            getStagingZone().wipe();
 
             //Setting up position tracking
             Files.write(Paths.get(REPO_DIR_NAME, POSITION_FILENAME),
@@ -261,5 +264,22 @@ public abstract class Repository {
         curCommit.clear();
         Commit newCommit = new Commit(commitID);
         newCommit.checkout();
+    }
+
+    /**
+     * Gets the staging zone of the repository.
+     * @return a StagingZone object for this repository.
+     */
+    @Nonnull
+    protected static StagingZone getStagingZone() throws VCS.BadRepoException {
+         if (stage == null) {
+             try {
+                 stage = new StagingZone(Paths.get(REPO_DIR_NAME, STAGE_DIR),
+                         Paths.get(REPO_DIR_NAME, STAGE_LIST));
+             } catch (VCS.NoSuchFileException e) {
+                 throw new VCS.BadRepoException();
+             }
+         }
+         return stage;
     }
 }

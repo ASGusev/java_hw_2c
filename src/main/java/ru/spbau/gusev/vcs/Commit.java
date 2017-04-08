@@ -133,7 +133,7 @@ public class Commit {
 
             contentDir = new HashedDirectory(rootDir.resolve(COMMIT_CONTENT_DIR),
                     rootDir.resolve(COMMIT_FILES_LIST));
-            StagingZone.getFiles().forEach(contentDir::copyFile);
+            Repository.getStagingZone().getFiles().forEach(contentDir::copyFile);
             contentDir.flushHashes();
 
             branch.addCommit(this);
@@ -223,7 +223,7 @@ public class Commit {
     protected void checkout() throws VCS.BadRepoException {
         contentDir.getFiles().forEach(WorkingDirectory::addFile);
 
-        StagingZone.cloneDir(contentDir);
+        Repository.getStagingZone().cloneDir(contentDir);
 
         Repository.setCurrentCommit(this);
     }
@@ -305,9 +305,10 @@ public class Commit {
      * @return a List with all removed files.
      */
     @Nonnull
-    protected List<String> getRemovedFiles() {
+    protected List<String> getRemovedFiles() throws VCS.BadRepoException {
+        final StagingZone stagingZone = Repository.getStagingZone();
         return contentDir.getFiles()
-                .filter(file -> !StagingZone.contains(file.getPath()))
+                .filter(file -> !stagingZone.contains(file.getPath()))
                 .map(HashedFile::getPath)
                 .map(Path::toString)
                 .collect(Collectors.toList());

@@ -17,6 +17,22 @@ public class HashedDirectory {
     private final Map<Path, HashedFile> hashes;
 
     /**
+     * Gets the path to the directory.
+     * @return the directory path.
+     */
+    public Path getDir() {
+        return dir;
+    }
+
+    /**
+     * Gets the path to the files list.
+     * @return the path to the list of files.
+     */
+    public Path getHashesPath() {
+        return hashesPath;
+    }
+
+    /**
      * Creates a HashedDirectory object with supplied directory and supplied file
      * with hashes.
      * @param dir the path to the directory.

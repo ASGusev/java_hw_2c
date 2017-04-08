@@ -7,7 +7,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public abstract class WorkingDirectory {
     private final static Path WORKING_DIR = Paths.get(".");
@@ -97,15 +99,15 @@ public abstract class WorkingDirectory {
     }
 
     /**
-     * Removes from the working directory all the files that have not been added to
-     * the repository.
+     * Deletes files that satisfy the given predicate.
+     * @param condition the predicate that returns true if a file should be deleted.
      */
-    protected static void clean() {
+    protected static void removeIf(@Nonnull Predicate<Path> condition) {
         try {
             Files.walk(WORKING_DIR)
                     .filter(Files::isRegularFile)
                     .filter(WorkingDirectory::isNotIgnored)
-                    .filter(path -> !StagingZone.contains(path))
+                    .filter(condition)
                     .forEach(path -> {
                         try {
                             Files.delete(path);
@@ -119,17 +121,19 @@ public abstract class WorkingDirectory {
     }
 
     /**
-     * Lists all the files that have been added to the repository but are in a different
-     * condition at the moment of method call.
-     * @return a list containing names of all changed files.
+     * Lists all files in the working directory that satisfy the given predicate.
+     * @param condition the predicate that return true if the given file should be
+     *                  listed.
+     * @return a List containing all the files on which the given predicate returns
+     * true.
      */
     @Nonnull
-    protected static List<String> getChangedFiles() {
+    protected static List<String> getSatisfying(Predicate<Path> condition) {
         try {
             return Files.walk(WORKING_DIR)
+                    .filter(Files::isRegularFile)
                     .filter(WorkingDirectory::isNotIgnored)
-                    .filter(StagingZone::contains)
-                    .filter(filePath -> !new HashedFile(filePath, WORKING_DIR).equals(StagingZone.getHashedFile(filePath)))
+                    .filter(condition)
                     .map(Path::toString)
                     .collect(Collectors.toList());
         } catch (IOException e) {
@@ -138,19 +142,16 @@ public abstract class WorkingDirectory {
     }
 
     /**
-     * Lists all the files in the working directory that have not been added to the
-     * repository.
-     * @return a List containing names of all files that are not in the repository.
+     * Creates a Stream of files in the directory.
+     * @return a Stream of files in the directory.
      */
     @Nonnull
-    protected static List<String> getCreatedFiles() {
+    protected static Stream<HashedFile> getFiles() {
         try {
             return Files.walk(WORKING_DIR)
                     .filter(Files::isRegularFile)
                     .filter(WorkingDirectory::isNotIgnored)
-                    .filter(filePath -> !StagingZone.contains(filePath))
-                    .map(Path::toString)
-                    .collect(Collectors.toList());
+                    .map(path -> new HashedFile(path, WORKING_DIR));
         } catch (IOException e) {
             throw new VCS.FileSystemError();
         }

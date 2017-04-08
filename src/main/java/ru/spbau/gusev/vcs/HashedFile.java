@@ -1,6 +1,7 @@
 package ru.spbau.gusev.vcs;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -95,7 +96,7 @@ public class HashedFile {
      * or is not a HashedFile object.
      */
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
         return (obj != null) && (obj instanceof HashedFile) &&
                 hash.equals(((HashedFile) obj).hash);
     }
