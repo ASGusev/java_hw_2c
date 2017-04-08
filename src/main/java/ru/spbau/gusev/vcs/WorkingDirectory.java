@@ -47,6 +47,9 @@ public class WorkingDirectory {
                     toAbsolutePath().getParent());
             Files.copy(file.getFullPath(), workingDir.resolve(file.getPath()),
                     StandardCopyOption.REPLACE_EXISTING);
+
+            //hashedFiles.put(file.getPath(), new HashedFile(file.getPath(), workingDir,
+            //        file.getHash()));
         } catch (IOException e) {
             throw new VCS.FileSystemError();
         }
@@ -81,6 +84,7 @@ public class WorkingDirectory {
 
         try {
             Files.delete(filePath);
+            //hashedFiles.remove(filePath);
         } catch (IOException e) {
             throw new VCS.FileSystemError();
         }
