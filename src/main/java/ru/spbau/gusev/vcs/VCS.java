@@ -39,7 +39,10 @@ public class VCS {
      * current branch.
      */
     public static void commit(@Nonnull String message) throws BadRepoException,
-            BadPositionException {
+            BadPositionException, NothingToCommitException {
+        if (getStaged().isEmpty()) {
+            throw new NothingToCommitException();
+        }
         Repository.setCurrentCommit(new Commit(message));
     }
 
@@ -350,4 +353,10 @@ public class VCS {
      * position.
      */
     public static class BadPositionException extends Exception{}
+
+    /**
+     * An exception thrown in case of an attempt to make a commit with no changes since
+     * the previous one.
+     */
+    public static class NothingToCommitException extends Exception{};
 }

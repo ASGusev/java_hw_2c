@@ -29,66 +29,6 @@ public class Commit {
     private final HashedDirectory contentDir;
 
     /**
-     * Gets the commit number.
-     * @return the commit number.
-     */
-    @Nonnull
-    protected Integer getNumber() {
-        return number;
-    }
-
-    /**
-     * Gets the commit creation time. Time is measured in millisecond from the beginning
-     * of the UNIX epoch.
-     * @return the commit creation time.
-     */
-    @Nonnull
-    protected long getCreationTime() {
-        return creationTime;
-    }
-
-    /**
-     * Gets the commit message.
-     * @return the commit message.
-     */
-    @Nonnull
-    protected String getMessage() {
-        return message;
-    }
-
-    /**
-     * Gets the branch that this commit belongs to.
-     * @return the branch that this commit belongs to.
-     */
-    @Nonnull
-    protected Branch getBranch() {
-        return branch;
-    }
-
-    /**
-     * Gets the commit author's username.
-     * @return the commit author's username.
-     */
-    @Nonnull
-    protected String getAuthor() {
-        return author;
-    }
-
-    /**
-     * Gets the parental commit, the commit which was the global head before this
-     * commit creation.
-     * @return the parental commit.
-     */
-    @Nonnull
-    protected Commit getFather() throws VCS.BadRepoException {
-        try {
-            return new Commit(father);
-        } catch (VCS.NoSuchCommitException e) {
-            throw new VCS.BadRepoException();
-        }
-    }
-
-    /**
      * Creates a new commit in the repository with given message in the current
      * branch and sets it as the global head.
      * @param message the commit message.
@@ -185,6 +125,66 @@ public class Commit {
         } catch (IOException e) {
             throw new VCS.FileSystemError();
         } catch (VCS.NoSuchBranchException e) {
+            throw new VCS.BadRepoException();
+        }
+    }
+
+    /**
+     * Gets the commit number.
+     * @return the commit number.
+     */
+    @Nonnull
+    protected Integer getNumber() {
+        return number;
+    }
+
+    /**
+     * Gets the commit creation time. Time is measured in millisecond from the beginning
+     * of the UNIX epoch.
+     * @return the commit creation time.
+     */
+    @Nonnull
+    protected long getCreationTime() {
+        return creationTime;
+    }
+
+    /**
+     * Gets the commit message.
+     * @return the commit message.
+     */
+    @Nonnull
+    protected String getMessage() {
+        return message;
+    }
+
+    /**
+     * Gets the branch that this commit belongs to.
+     * @return the branch that this commit belongs to.
+     */
+    @Nonnull
+    protected Branch getBranch() {
+        return branch;
+    }
+
+    /**
+     * Gets the commit author's username.
+     * @return the commit author's username.
+     */
+    @Nonnull
+    protected String getAuthor() {
+        return author;
+    }
+
+    /**
+     * Gets the parental commit, the commit which was the global head before this
+     * commit creation.
+     * @return the parental commit.
+     */
+    @Nonnull
+    protected Commit getFather() throws VCS.BadRepoException {
+        try {
+            return new Commit(father);
+        } catch (VCS.NoSuchCommitException e) {
             throw new VCS.BadRepoException();
         }
     }
@@ -309,5 +309,16 @@ public class Commit {
                 .map(HashedFile::getPath)
                 .map(Path::toString)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Deletes the commit from the repository.
+     */
+    protected void delete() {
+        try {
+            HashedDirectory.deleteDir(rootDir);
+        } catch (IOException e) {
+            throw new VCS.FileSystemError();
+        }
     }
 }

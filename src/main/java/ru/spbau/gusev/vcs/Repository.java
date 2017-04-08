@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.util.List;
 import java.util.Scanner;
+import java.util.stream.Collectors;
 
 /**
  * A class with methods for operating with the repository.
@@ -295,5 +296,35 @@ public abstract class Repository {
             workingDirectory = new WorkingDirectory(Paths.get("."));
         }
         return workingDirectory;
+    }
+
+    /**
+     * Lists all the branches in the repository.
+     * @return a list containing all the branches in the repository.
+     * @throws VCS.BadRepoException if the repository is corrupt.
+     */
+    @Nonnull
+    protected static List<Branch> getBranches() throws VCS.BadRepoException {
+        Path branchesDir = Paths.get(REPO_DIR_NAME, BRANCHES_DIR_NAME);
+        if (!Files.isDirectory(branchesDir)) {
+            throw new VCS.BadRepoException();
+        }
+
+        try {
+            return Files.list(branchesDir)
+                    .map(line -> {
+                        try {
+                            String branchName = branchesDir.relativize(line).toString();
+                            return Branch.getByName(branchName);
+                        } catch (VCS.NoSuchBranchException e) {
+                            throw new Error();
+                        }
+                    })
+                    .collect(Collectors.toList());
+        } catch (IOException e) {
+            throw new VCS.FileSystemError();
+        } catch (Error e) {
+            throw new VCS.BadRepoException();
+        }
     }
 }

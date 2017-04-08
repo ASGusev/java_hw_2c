@@ -124,15 +124,16 @@ public class Main {
 
     private static void commit(@Nonnull String[] args) {
         if (args.length == 1) {
-            System.out.println("CommitDescription message required.");
+            System.out.println("Commit message required.");
         } else {
             try {
                 VCS.commit(args[1]);
             } catch (VCS.BadRepoException e) {
                 System.out.println("Incorrect repo");
             } catch (VCS.BadPositionException e) {
-                System.out.println("You must be in the head of a " +
-                        "branch to commit.");
+                System.out.println("You must be in the head of a branch to commit.");
+            } catch (VCS.NothingToCommitException e) {
+                System.out.println("Nothing to commit.");
             }
         }
     }

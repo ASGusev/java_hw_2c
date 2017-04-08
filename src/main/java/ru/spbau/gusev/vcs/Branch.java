@@ -1,11 +1,14 @@
 package ru.spbau.gusev.vcs;
 
+import jdk.nashorn.api.scripting.NashornScriptEngine;
+
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import java.util.stream.Collectors;
@@ -170,20 +173,19 @@ public class Branch {
             throw new VCS.BadPositionException();
         }
 
-        Path commitsDir = Paths.get(Repository.REPO_DIR_NAME, Repository.COMMITS_DIR_NAME);
         try {
             Files.lines(commitsListPath).forEach(commit -> {
                 try {
-                    HashedDirectory.deleteDir(commitsDir.resolve(commit));
-                } catch (IOException e) {
-                    throw new VCS.FileSystemError();
+                    new Commit(Integer.valueOf(commit)).delete();
+                } catch (VCS.NoSuchCommitException | VCS.BadRepoException e) {
+                    throw new Error();
                 }
             });
-            Path record = Paths.get(Repository.REPO_DIR_NAME,
-                    Repository.BRANCHES_DIR_NAME, name);
-            Files.delete(record);
+            Files.delete(commitsListPath);
         } catch (IOException e){
             throw new VCS.FileSystemError();
+        } catch (Error e) {
+            throw new VCS.BadRepoException();
         }
     }
 
@@ -197,5 +199,24 @@ public class Branch {
     @Override
     public boolean equals(Object o) {
         return o instanceof Branch && ((Branch)o).name.equals(this.name);
+    }
+
+    /**
+     * Gets the root commit of the branch.
+     * @return the number of commit that was the head at the moment before the branch
+     * creation.
+     * @throws VCS.BadRepoException if the repository is corrupt.
+     */
+    @Nonnull
+    private Integer getPrevCommitID() throws VCS.BadRepoException {
+        if (!Files.isRegularFile(commitsListPath)) {
+            throw new VCS.BadRepoException();
+        }
+
+        try {
+            return Integer.valueOf(Files.readAllLines(commitsListPath).get(0));
+        } catch (IOException e) {
+            throw new VCS.FileSystemError();
+        }
     }
 }
