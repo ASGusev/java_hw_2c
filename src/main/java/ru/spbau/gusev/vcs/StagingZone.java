@@ -29,16 +29,6 @@ public class StagingZone {
 
     /**
      * Adds a file to the staging directory, including it into the next commit.
-     * @param filePath the path to the file to add.
-     * @throws VCS.NoSuchFileException if the supplied path does not lead to a
-     * correct file.
-     */
-    protected void addFile(@Nonnull Path filePath) throws VCS.NoSuchFileException {
-        addFile(WorkingDirectory.getHashedFileByName(filePath.toString()));
-    }
-
-    /**
-     * Adds a file to the staging directory, including it into the next commit.
      * @param file the file to add represented by a HashedFile object.
      */
     protected void addFile(@Nonnull HashedFile file) {

@@ -195,10 +195,11 @@ public class Commit {
     protected void clear() {
         Path contentDir = rootDir.resolve(COMMIT_CONTENT_DIR);
         try {
+            WorkingDirectory workingDirectory = Repository.getWorkingDirectory();
             Files.walk(contentDir)
                     .filter(Files::isRegularFile)
                     .forEach(path -> {
-                        WorkingDirectory.deleteFile(contentDir.relativize(path));
+                        workingDirectory.deleteFile(contentDir.relativize(path));
                     });
             Files.walk(contentDir)
                     .forEach(path -> {
@@ -221,7 +222,8 @@ public class Commit {
      * @throws VCS.BadRepoException if the repository folder is corrupt.
      */
     protected void checkout() throws VCS.BadRepoException {
-        contentDir.getFiles().forEach(WorkingDirectory::addFile);
+        WorkingDirectory workingDirectory = Repository.getWorkingDirectory();
+        contentDir.getFiles().forEach(workingDirectory::add);
 
         Repository.getStagingZone().cloneDir(contentDir);
 
@@ -282,7 +284,8 @@ public class Commit {
 
         HashedFile hashedFile = new HashedFile(filePath,
                 rootDir.resolve(COMMIT_CONTENT_DIR));
-        WorkingDirectory.addFile(hashedFile);
+        WorkingDirectory workingDirectory = Repository.getWorkingDirectory();
+        workingDirectory.add(hashedFile);
     }
 
     /**

@@ -56,6 +56,7 @@ public class HashedFile {
             while (stream.read() != -1) {}
             hash = messageDigest.digest();
         } catch (IOException e) {
+            e.printStackTrace();
             throw new VCS.FileSystemError();
         } catch (NoSuchAlgorithmException e) {}
         return new BigInteger(1, hash).toString();
@@ -109,5 +110,14 @@ public class HashedFile {
     @Nonnull
     protected Path getFullPath() {
         return dir.resolve(path);
+    }
+
+    /**
+     * Gets the name of the file.
+     * @return String returned by toString method of path from dir.
+     */
+    @Override
+    public String toString() {
+        return path.toString();
     }
 }

@@ -24,6 +24,7 @@ public abstract class Repository {
     protected static final String STAGE_LIST = "stage_list";
 
     private static StagingZone stage;
+    private static WorkingDirectory workingDirectory;
 
     /**
      * Initialises a repository in the current directory. A folder with all the
@@ -281,5 +282,18 @@ public abstract class Repository {
              }
          }
          return stage;
+    }
+
+    /**
+     * Gets the WorkingDirectory representation of this repository's working directory.
+     * @return a WorkingDirectory object referring to the repository's working
+     * directory.
+     */
+    @Nonnull
+    protected static WorkingDirectory getWorkingDirectory() {
+        if (workingDirectory == null) {
+            workingDirectory = new WorkingDirectory(Paths.get("."));
+        }
+        return workingDirectory;
     }
 }
