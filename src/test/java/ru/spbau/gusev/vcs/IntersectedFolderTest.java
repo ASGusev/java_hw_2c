@@ -18,7 +18,7 @@ public class IntersectedFolderTest {
     private final Path file = Paths.get("file");
     private final String fileContent = "ddd";
     private final Path curDir = Paths.get(".");
-    /*
+
     @Before
     public void makeMock() throws VCS.NoSuchFileException {
         mockedStorage = Mockito.mock(IntersectedFolderStorage.class);
@@ -103,5 +103,4 @@ public class IntersectedFolderTest {
             }
         }
     }
-    */
 }

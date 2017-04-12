@@ -76,20 +76,4 @@ public class VCSTest {
             Files.deleteIfExists(filePath);
         }
     }
-
-    @Test
-    public void clearTest() throws VCS.RepoAlreadyExistsException, IOException,
-            VCS.BadRepoException {
-        Path filePath = Paths.get("file");
-
-        try {
-            Repository.create("usr");
-            Files.createFile(filePath);
-            VCS.clean();
-            Assert.assertTrue(Files.notExists(filePath));
-        } finally {
-            HashedDirectory.deleteDir(Repository.REPO_DIR_NAME);
-            Files.deleteIfExists(filePath);
-        }
-    }
 }
