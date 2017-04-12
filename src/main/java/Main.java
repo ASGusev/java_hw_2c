@@ -86,8 +86,7 @@ public class Main {
         "login <new username> - changes current username to the given one\n" +
         "rm <filename> - removes the file with given name from the working directory " +
                 "and stage\n" +
-        "reset <filename> - restores the file with given name to the state captured " +
-                "in the current head commit\n" +
+        "reset <filename> - resets the file\n" +
         "clean - removes from the working directory all the files that have not been " +
                 "added to the repository\n" +
         "status - to show information about new, changed, deleted and staged files");
