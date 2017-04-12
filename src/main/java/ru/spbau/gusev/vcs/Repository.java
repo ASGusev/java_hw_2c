@@ -48,6 +48,7 @@ public abstract class Repository {
         try {
             Files.createDirectory(Paths.get(REPO_DIR_NAME));
             Files.createDirectory(Paths.get(REPO_DIR_NAME, COMMITS_FILES_STORAGE));
+            Files.createFile(Paths.get(REPO_DIR_NAME, COMMITS_FILES_LIST));
 
             //Setting username
             Files.write(Paths.get(REPO_DIR_NAME, USERNAME_FILE), author.getBytes());

@@ -261,19 +261,16 @@ public class Commit {
      * @param directory the directory where the file should be reset.
      */
     protected void resetFile(@Nonnull Path filePath,
-                             @Nonnull WorkingDirectory directory)
-            throws VCS.NoSuchFileException {
-        /*
-        if (!Files.isRegularFile(rootDir.resolve(COMMIT_CONTENT_DIR).resolve(filePath))) {
-            throw new VCS.NoSuchFileException();
+                             @Nonnull WorkingDirectory directory,
+                             @Nonnull StagingZone stagingZone) {
+        if (contentFolder.contains(filePath)) {
+            TrackedFile file = contentFolder.getFile(filePath);
+            stagingZone.add(file);
+            directory.add(file);
+        } else {
+            stagingZone.removeFile(filePath);
+            directory.delete(filePath);
         }
-
-        HashedFile hashedFile = new HashedFile(filePath,
-                rootDir.resolve(COMMIT_CONTENT_DIR));
-        directory.add(hashedFile);
-        */
-        //TODO: rewrite
-        throw new UnsupportedOperationException();
     }
 
     /**

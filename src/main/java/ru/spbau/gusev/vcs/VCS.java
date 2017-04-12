@@ -167,7 +167,7 @@ public class VCS {
             NoSuchFileException {
         Path filePath = Paths.get(filename);
         Repository.getCurrentCommit().resetFile(filePath,
-                Repository.getWorkingDirectory());
+                Repository.getWorkingDirectory(), Repository.getStagingZone());
     }
 
     /**

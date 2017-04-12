@@ -4,9 +4,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
 import java.util.Collections;
 import java.util.List;
 
@@ -50,6 +48,11 @@ public class MergerTest {
             Assert.assertTrue(Files.exists(FILE_TO_CREATE));
             Assert.assertEquals(Collections.singletonList(V2),
                     Files.readAllLines(FILE_TO_UPDATE));
+
+            Files.delete(Paths.get(Repository.REPO_DIR_NAME,
+                    "commits_files_list"));
+            Files.createFile(Paths.get(Repository.REPO_DIR_NAME,
+                    "commits_files_list"));
         } finally {
             HashedDirectory.deleteDir(Repository.REPO_DIR_NAME);
             if (Files.exists(FILE_TO_KEEP)) {
@@ -75,43 +78,43 @@ public class MergerTest {
         final Path FILE_CREATED_IN_WORK = Paths.get("file_cr_work");
         final Path FILE_CREATED_IN_BOTH = Paths.get("file_cr_both");
 
-        List<String> V2 = Collections.singletonList("v2");
-        List<String> V3 = Collections.singletonList("v3");
+        List<String> V2 = Collections.singletonList("v5");
+        List<String> V3 = Collections.singletonList("v6");
 
         try {
             Repository.create("usr");
             StagingZone stagingZone = Repository.getStagingZone();
             Path curDir = Paths.get(".");
 
-            Files.write(FILE_UPDATED_IN_MASTER, "v1".getBytes());
-            Files.write(FILE_UPDATED_IN_WORK, "v1".getBytes());
-            Files.write(FILE_UPDATED_IN_BOTH, "v1".getBytes());
+            Files.write(FILE_UPDATED_IN_MASTER, "v4".getBytes());
+            Files.write(FILE_UPDATED_IN_WORK, "v4".getBytes());
+            Files.write(FILE_UPDATED_IN_BOTH, "v4".getBytes());
             stagingZone.add(new HashedFile(FILE_UPDATED_IN_MASTER, curDir));
             stagingZone.add(new HashedFile(FILE_UPDATED_IN_WORK, curDir));
             stagingZone.add(new HashedFile(FILE_UPDATED_IN_BOTH, curDir));
-            Commit masterCommit1 = new Commit("v1");
+            Commit masterCommit1 = new Commit("v4");
 
-            Files.write(FILE_UPDATED_IN_MASTER, "v2".getBytes());
-            Files.write(FILE_UPDATED_IN_BOTH, "v2".getBytes());
-            Files.write(FILE_CREATED_IN_MASTER, "v2".getBytes());
-            Files.write(FILE_CREATED_IN_BOTH, "v2".getBytes());
+            Files.write(FILE_UPDATED_IN_MASTER, "v5".getBytes());
+            Files.write(FILE_UPDATED_IN_BOTH, "v5".getBytes());
+            Files.write(FILE_CREATED_IN_MASTER, "v5".getBytes());
+            Files.write(FILE_CREATED_IN_BOTH, "v5".getBytes());
             stagingZone.add(new HashedFile(FILE_UPDATED_IN_MASTER, curDir));
             stagingZone.add(new HashedFile(FILE_UPDATED_IN_BOTH, curDir));
             stagingZone.add(new HashedFile(FILE_CREATED_IN_MASTER, curDir));
             stagingZone.add(new HashedFile(FILE_CREATED_IN_BOTH, curDir));
-            Commit masterCommit2 = new Commit("v2");
+            Commit masterCommit2 = new Commit("v5");
 
             Repository.checkoutCommit(masterCommit1.getNumber());
             Branch workBranch = Branch.create("work");
-            Files.write(FILE_UPDATED_IN_WORK, "v3".getBytes());
-            Files.write(FILE_UPDATED_IN_BOTH, "v3".getBytes());
-            Files.write(FILE_CREATED_IN_WORK, "v3".getBytes());
-            Files.write(FILE_CREATED_IN_BOTH, "v3".getBytes());
+            Files.write(FILE_UPDATED_IN_WORK, "v6".getBytes());
+            Files.write(FILE_UPDATED_IN_BOTH, "v6".getBytes());
+            Files.write(FILE_CREATED_IN_WORK, "v6".getBytes());
+            Files.write(FILE_CREATED_IN_BOTH, "v6".getBytes());
             stagingZone.add(new HashedFile(FILE_UPDATED_IN_WORK, curDir));
             stagingZone.add(new HashedFile(FILE_UPDATED_IN_BOTH, curDir));
             stagingZone.add(new HashedFile(FILE_CREATED_IN_WORK, curDir));
             stagingZone.add(new HashedFile(FILE_CREATED_IN_BOTH, curDir));
-            Commit workCommit = new Commit("v3");
+            Commit workCommit = new Commit("v6");
 
             Repository.checkoutCommit(masterCommit2.getNumber());
             Merger.merge(workBranch);
