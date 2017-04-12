@@ -176,7 +176,7 @@ public class VCS {
      */
     public static void clean() throws BadRepoException {
         final StagingZone stagingZone = Repository.getStagingZone();
-        Repository.getWorkingDirectory().deleteIf(stagingZone::contains);
+        Repository.getWorkingDirectory().deleteIf(file -> !stagingZone.contains(file));
     }
 
     /**
