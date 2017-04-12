@@ -94,7 +94,7 @@ public class HashedDirectory {
     /**
      * Writes the file hashes to the hashes file.
      */
-    protected void flushHashes() {
+    protected void writeHashes() {
         if (hashesPath == null) {
             throw new IllegalStateException();
         }
@@ -144,13 +144,13 @@ public class HashedDirectory {
      */
     protected void add(@Nonnull HashedFile file) {
         try {
-            Path newFilePath = dir.resolve(file.getPath());
+            Path newFilePath = dir.resolve(file.getName());
 
             Files.createDirectories(newFilePath.getParent());
-            Files.copy(file.getFullPath(), newFilePath,
+            Files.copy(file.getLocation(), newFilePath,
                     StandardCopyOption.REPLACE_EXISTING);
 
-            hashes.put(file.getPath(), new HashedFile(file.getPath(), dir, file.getHash()));
+            hashes.put(file.getName(), new HashedFile(file.getName(), dir, file.getHash()));
         } catch (IOException e) {
             throw new VCS.FileSystemError();
         }

@@ -31,7 +31,7 @@ public class StagingZone {
      */
     protected void addFile(@Nonnull HashedFile file) {
         stageHashDir.add(file);
-        stageHashDir.flushHashes();
+        stageHashDir.writeHashes();
     }
 
     /**
@@ -39,7 +39,7 @@ public class StagingZone {
      */
     protected void wipe() {
         stageHashDir.clear();
-        stageHashDir.flushHashes();
+        stageHashDir.writeHashes();
     }
 
     /**
@@ -59,7 +59,7 @@ public class StagingZone {
     protected boolean removeFile(@Nonnull Path file) {
         try {
             stageHashDir.deleteFile(file);
-            stageHashDir.flushHashes();
+            stageHashDir.writeHashes();
         } catch (VCS.NoSuchFileException e) {
             return false;
         }

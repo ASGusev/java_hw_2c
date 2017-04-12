@@ -190,7 +190,7 @@ public class VCS {
         Commit currentCommit = Repository.getCurrentCommit();
         return Repository.getStagingZone().getFiles()
                 .filter(file -> {
-                    HashedFile fileInCommit = currentCommit.getHashedFile(file.getPath());
+                    HashedFile fileInCommit = currentCommit.getHashedFile(file.getName());
                     return  (fileInCommit == null || !file.equals(fileInCommit));
                 })
                 .map(HashedFile::toString)
@@ -207,7 +207,7 @@ public class VCS {
         final StagingZone stagingZone = Repository.getStagingZone();
         return Repository.getWorkingDirectory().getFiles()
                 .filter(file -> {
-                    HashedFile stagedFile = stagingZone.getHashedFile(file.getPath());
+                    HashedFile stagedFile = stagingZone.getHashedFile(file.getName());
                     return !file.equals(stagedFile);
                 })
                 .map(HashedFile::toString)
@@ -223,7 +223,7 @@ public class VCS {
     public static List<String> getCreated() throws BadRepoException {
         final StagingZone stagingZone = Repository.getStagingZone();
         return Repository.getWorkingDirectory().getFiles()
-                .filter(file -> !stagingZone.contains(file.getPath()))
+                .filter(file -> !stagingZone.contains(file.getName()))
                 .map(HashedFile::toString)
                 .collect(Collectors.toList());
     }

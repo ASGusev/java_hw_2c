@@ -83,7 +83,7 @@ public class WorkingDirectoryTest {
 
             HashedFile hashedFile = workingDirectory.getHashedFile(filePath.toString());
             Assert.assertEquals(testDir, hashedFile.getDir());
-            Assert.assertEquals(filePath, hashedFile.getPath());
+            Assert.assertEquals(filePath, hashedFile.getName());
             Assert.assertEquals(HashedFile.calcFileHash
                     (testDir.resolve(filePath).toString()), hashedFile.getHash());
         } finally {
@@ -104,7 +104,7 @@ public class WorkingDirectoryTest {
             WorkingDirectory workingDirectory = new WorkingDirectory(testDir);
 
             Stream<HashedFile> filesInDir = workingDirectory.getFiles();
-            Assert.assertTrue(filesInDir.map(HashedFile::getPath)
+            Assert.assertTrue(filesInDir.map(HashedFile::getName)
                     .allMatch(filePath1::equals));
         } finally {
             HashedDirectory.deleteDir(testDir);

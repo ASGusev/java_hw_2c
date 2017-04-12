@@ -45,7 +45,7 @@ public class HashedDirectoryTest {
             Files.write(filePath, fileContent.getBytes());
             HashedFile hashedFile = new HashedFile(filePath, CUR_DIR);
             hashedDirectory.add(hashedFile);
-            hashedDirectory.flushHashes();
+            hashedDirectory.writeHashes();
 
             String expectedHash = filePath.toString() + ' ' +
                     HashedFile.calcFileHash(filePath.toString());
@@ -70,7 +70,7 @@ public class HashedDirectoryTest {
             HashedFile hashedFile = new HashedFile(filePath, CUR_DIR);
             hashedDirectory.add(hashedFile);
             hashedDirectory.clear();
-            hashedDirectory.flushHashes();
+            hashedDirectory.writeHashes();
 
             Assert.assertTrue(Files.notExists(TEST_DIR.resolve(filePath)));
             Assert.assertEquals(Collections.emptyList(),
@@ -90,7 +90,7 @@ public class HashedDirectoryTest {
             HashedFile hashedFile = new HashedFile(filePath, CUR_DIR);
             hashedDirectory.add(hashedFile);
             hashedDirectory.deleteFile(filePath);
-            hashedDirectory.flushHashes();
+            hashedDirectory.writeHashes();
 
             Assert.assertTrue(Files.notExists(TEST_DIR.resolve(filePath)));
             Assert.assertEquals(Collections.emptyList(),
@@ -125,7 +125,7 @@ public class HashedDirectoryTest {
 
             hashedDirectory.add(new HashedFile(filePath, CUR_DIR));
             Stream<Path> files = hashedDirectory.getFiles()
-                    .map(HashedFile::getPath);
+                    .map(HashedFile::getName);
 
             Assert.assertTrue(files.allMatch(filePath::equals));
             Assert.assertEquals(1, hashedDirectory.getFiles().count());

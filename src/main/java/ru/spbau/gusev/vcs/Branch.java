@@ -200,23 +200,4 @@ public class Branch {
     public boolean equals(Object o) {
         return o instanceof Branch && ((Branch)o).name.equals(this.name);
     }
-
-    /**
-     * Gets the root commit of the branch.
-     * @return the number of commit that was the head at the moment before the branch
-     * creation.
-     * @throws VCS.BadRepoException if the repository is corrupt.
-     */
-    @Nonnull
-    private Integer getPrevCommitID() throws VCS.BadRepoException {
-        if (!Files.isRegularFile(commitsListPath)) {
-            throw new VCS.BadRepoException();
-        }
-
-        try {
-            return Integer.valueOf(Files.readAllLines(commitsListPath).get(0));
-        } catch (IOException e) {
-            throw new VCS.FileSystemError();
-        }
-    }
 }

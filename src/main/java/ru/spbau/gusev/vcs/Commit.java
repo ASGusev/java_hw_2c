@@ -74,7 +74,7 @@ public class Commit {
             contentDir = new HashedDirectory(rootDir.resolve(COMMIT_CONTENT_DIR),
                     rootDir.resolve(COMMIT_FILES_LIST));
             Repository.getStagingZone().getFiles().forEach(contentDir::add);
-            contentDir.flushHashes();
+            contentDir.writeHashes();
 
             branch.addCommit(this);
             Repository.setCurrentCommit(this);
@@ -305,8 +305,8 @@ public class Commit {
     protected List<String> getRemovedFiles() throws VCS.BadRepoException {
         final StagingZone stagingZone = Repository.getStagingZone();
         return contentDir.getFiles()
-                .filter(file -> !stagingZone.contains(file.getPath()))
-                .map(HashedFile::getPath)
+                .filter(file -> !stagingZone.contains(file.getName()))
+                .map(HashedFile::getName)
                 .map(Path::toString)
                 .collect(Collectors.toList());
     }

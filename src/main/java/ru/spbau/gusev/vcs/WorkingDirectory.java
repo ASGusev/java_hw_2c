@@ -13,7 +13,7 @@ public class WorkingDirectory {
     private final List<Path> ignoredPaths;
     private final static String IGNORE_LIST_FILENAME = ".ignore";
 
-    WorkingDirectory(Path dir) {
+    WorkingDirectory(@Nonnull Path dir) {
         workingDir = dir;
 
         // Files with paths beginning with the paths listed in the .ignore file are
@@ -41,9 +41,9 @@ public class WorkingDirectory {
      */
     protected void add(@Nonnull HashedFile file) {
         try {
-            Files.createDirectories(workingDir.resolve(file.getPath()).
+            Files.createDirectories(workingDir.resolve(file.getName()).
                     toAbsolutePath().getParent());
-            Files.copy(file.getFullPath(), workingDir.resolve(file.getPath()),
+            Files.copy(file.getLocation(), workingDir.resolve(file.getName()),
                     StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             throw new VCS.FileSystemError();
@@ -128,7 +128,7 @@ public class WorkingDirectory {
         }
     }
 
-    private boolean isNotIgnored(Path path) {
+    private boolean isNotIgnored(@Nonnull Path path) {
         for (Path ignored: ignoredPaths) {
             if (path.startsWith(ignored)) {
                 return false;

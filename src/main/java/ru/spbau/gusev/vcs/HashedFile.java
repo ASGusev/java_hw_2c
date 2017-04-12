@@ -13,7 +13,7 @@ import java.security.NoSuchAlgorithmException;
 /**
  * A class representing a file with calculated hash.
  */
-public class HashedFile {
+public class HashedFile implements TrackedFile {
     private final String hash;
     private final Path path;
     private final Path dir;
@@ -47,7 +47,7 @@ public class HashedFile {
      * @return SHA-1 hash of the provided file.
      */
     @Nonnull
-    protected static String calcFileHash(@Nonnull String filePath) {
+    public static String calcFileHash(@Nonnull String filePath) {
         DigestInputStream stream;
         byte[] hash = null;
         try (FileInputStream fin = new FileInputStream(filePath)) {
@@ -76,7 +76,7 @@ public class HashedFile {
      * @return the path to the file.
      */
     @Nonnull
-    public Path getPath() {
+    public Path getName() {
         return path;
     }
 
@@ -108,7 +108,7 @@ public class HashedFile {
      * @return the path to the file.
      */
     @Nonnull
-    protected Path getFullPath() {
+    public Path getLocation() {
         return dir.resolve(path);
     }
 

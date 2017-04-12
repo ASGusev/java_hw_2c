@@ -130,8 +130,8 @@ public class StagingZoneTest {
 
             StagingZone stagingZone = new StagingZone(stageDir, stageList);
             HashedFile hashedFile = stagingZone.getHashedFile(filePath);
-            Assert.assertEquals(filePath, hashedFile.getPath());
-            Assert.assertEquals(stageFilePath, hashedFile.getFullPath());
+            Assert.assertEquals(filePath, hashedFile.getName());
+            Assert.assertEquals(stageFilePath, hashedFile.getLocation());
             Assert.assertEquals(stageDir, hashedFile.getDir());
             Assert.assertEquals(HashedFile.calcFileHash(stageFilePath.toString()),
                     hashedFile.getHash());
