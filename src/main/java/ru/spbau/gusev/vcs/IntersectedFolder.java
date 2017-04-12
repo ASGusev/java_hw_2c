@@ -10,6 +10,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 
 /**
  * A folder that may intersect with other folders. Files present in several folders
@@ -51,7 +52,7 @@ public class IntersectedFolder {
      * Adds a file to the directory.
      * @param file the file to add.
      */
-    protected void add(@Nonnull HashedFile file) {
+    protected void add(@Nonnull TrackedFile file) {
         files.put(file.getName(), storage.add(file));
     }
 
@@ -94,8 +95,29 @@ public class IntersectedFolder {
                 }
             });
             listWriter.close();
+            storage.writeCounters();
         } catch (IOException e) {
             throw new VCS.FileSystemError();
         }
+    }
+
+    /**
+     * Creates a stream containing all files in the folder.
+     * @return a Stream object containing TrackedFile representations of all files in
+     * the folder.
+     */
+    @Nonnull
+    protected Stream<TrackedFile> getFiles() {
+        return files.values().stream();
+    }
+
+    /**
+     * Checks if a file with given name exists in the folder.
+     * @param fileName the name of the file to check.
+     * @return true if a file with the given name exists in the folder, false if it
+     * doesn't.
+     */
+    protected boolean contains(@Nonnull Path fileName) {
+        return files.containsKey(fileName);
     }
 }

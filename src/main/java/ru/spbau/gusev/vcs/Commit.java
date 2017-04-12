@@ -10,14 +10,15 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * A class representing a commit in the repository.
  */
 public class Commit {
-    protected static final String COMMIT_CONTENT_DIR = "content";
-    protected static final String COMMIT_METADATA_FILE = "metadata";
-    protected static final String COMMIT_FILES_LIST = "files_list";
+    private static final String COMMIT_CONTENT_DIR = "content";
+    private static final String COMMIT_METADATA_FILE = "metadata";
+    private static final String COMMIT_FILES_LIST = "files_list";
 
     private final Integer number;
     private final long creationTime;
@@ -26,7 +27,7 @@ public class Commit {
     private final String author;
     private final Integer father;
     private final Path rootDir;
-    private final HashedDirectory contentDir;
+    private final IntersectedFolder contentFolder;
 
     /**
      * Creates a new commit in the repository with given message in the current
@@ -60,7 +61,6 @@ public class Commit {
 
         try {
             Files.createDirectory(rootDir);
-            Files.createDirectory(rootDir.resolve(COMMIT_CONTENT_DIR));
 
             BufferedWriter metadataWriter = new BufferedWriter(new FileWriter(
                     rootDir.resolve(COMMIT_METADATA_FILE).toString()));
@@ -71,10 +71,10 @@ public class Commit {
             metadataWriter.write(message);
             metadataWriter.close();
 
-            contentDir = new HashedDirectory(rootDir.resolve(COMMIT_CONTENT_DIR),
+            contentFolder = new IntersectedFolder(Repository.getCommitStorage(),
                     rootDir.resolve(COMMIT_FILES_LIST));
-            Repository.getStagingZone().getFiles().forEach(contentDir::add);
-            contentDir.writeHashes();
+            Repository.getStagingZone().getFiles().forEach(contentFolder::add);
+            contentFolder.writeList();
 
             branch.addCommit(this);
             Repository.setCurrentCommit(this);
@@ -120,7 +120,7 @@ public class Commit {
             }
             message = messageBuilder.toString();
 
-            contentDir = new HashedDirectory(rootDir.resolve(COMMIT_CONTENT_DIR),
+            contentFolder = new IntersectedFolder(Repository.getCommitStorage(),
                     rootDir.resolve(COMMIT_FILES_LIST));
         } catch (IOException e) {
             throw new VCS.FileSystemError();
@@ -194,16 +194,8 @@ public class Commit {
      * @param directory the directory from which the commit files should be removed.
      */
     protected void removeFrom(@Nonnull WorkingDirectory directory) {
-        Path contentDir = rootDir.resolve(COMMIT_CONTENT_DIR);
-        try {
-            Files.walk(contentDir)
-                    .filter(Files::isRegularFile)
-                    .forEach(path -> {
-                        directory.delete(contentDir.relativize(path));
-                    });
-        } catch (IOException e) {
-            throw new VCS.FileSystemError();
-        }
+        contentFolder.getFiles()
+                .forEach(file -> directory.delete(file.getName()));
     }
 
     /**
@@ -214,10 +206,10 @@ public class Commit {
      */
     protected void checkout(@Nonnull WorkingDirectory directory) throws
             VCS.BadRepoException {
-        contentDir.getFiles().forEach(directory::add);
+        contentFolder.getFiles().forEach(directory::add);
 
         final StagingZone stagingZone = Repository.getStagingZone();
-        contentDir.getFiles().forEach(stagingZone::addFile);
+        contentFolder.getFiles().forEach(stagingZone::add);
 
         Repository.setCurrentCommit(this);
     }
@@ -254,14 +246,12 @@ public class Commit {
     }
 
     /**
-     * Gets a mapping from file path in commit to its hash and path from the
-     * working directory.
-     * @return a Map from file path to its description.
+     * Gets a stream with all the files in the commit.
+     * @return a Stream with TrackedFile objects for all files in the repository.
      */
     @Nonnull
-    public Map<Path, HashedFile> getFileDescriptions() {
-        return new HashedDirectory(rootDir.resolve(COMMIT_CONTENT_DIR),
-                rootDir.resolve(COMMIT_FILES_LIST)).getFileDescriptions();
+    public Stream<TrackedFile> getFiles() {
+        return contentFolder.getFiles();
     }
 
     /**
@@ -273,6 +263,7 @@ public class Commit {
     protected void resetFile(@Nonnull Path filePath,
                              @Nonnull WorkingDirectory directory)
             throws VCS.NoSuchFileException {
+        /*
         if (!Files.isRegularFile(rootDir.resolve(COMMIT_CONTENT_DIR).resolve(filePath))) {
             throw new VCS.NoSuchFileException();
         }
@@ -280,6 +271,9 @@ public class Commit {
         HashedFile hashedFile = new HashedFile(filePath,
                 rootDir.resolve(COMMIT_CONTENT_DIR));
         directory.add(hashedFile);
+        */
+        //TODO: rewrite
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -288,12 +282,12 @@ public class Commit {
      * @return a HashedFile representation of the file or null if the file doesn't exist.
      */
     @Nullable
-    protected HashedFile getHashedFile(@Nonnull Path filePath) {
-        if (!contentDir.contains(filePath)) {
+    protected TrackedFile getFile(@Nonnull Path filePath) {
+        if (!contentFolder.contains(filePath)) {
             return null;
         }
 
-        return contentDir.getHashedFile(filePath);
+        return contentFolder.getFile(filePath);
     }
 
     /**
@@ -304,9 +298,9 @@ public class Commit {
     @Nonnull
     protected List<String> getRemovedFiles() throws VCS.BadRepoException {
         final StagingZone stagingZone = Repository.getStagingZone();
-        return contentDir.getFiles()
+        return contentFolder.getFiles()
                 .filter(file -> !stagingZone.contains(file.getName()))
-                .map(HashedFile::getName)
+                .map(TrackedFile::getName)
                 .map(Path::toString)
                 .collect(Collectors.toList());
     }
@@ -316,6 +310,14 @@ public class Commit {
      */
     protected void delete() {
         try {
+            contentFolder.getFiles()
+                    .forEach(file -> {
+                        try {
+                            contentFolder.delete(file.getName());
+                        } catch (VCS.NoSuchFileException e) {
+                            throw new VCS.FileSystemError();
+                        }
+                    });
             HashedDirectory.deleteDir(rootDir);
         } catch (IOException e) {
             throw new VCS.FileSystemError();

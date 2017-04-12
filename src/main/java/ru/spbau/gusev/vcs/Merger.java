@@ -5,6 +5,7 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * A module for merging commits.
@@ -37,10 +38,13 @@ public abstract class Merger {
         }
         Commit commonPredecessor = curCommitPedigree.get(pos - 1);
 
-        Map<Path, HashedFile> sourceFiles = commonPredecessor.getFileDescriptions();
-        Map<Path, HashedFile> mergedFiles = commitToMerge.getFileDescriptions();
-        Map<Path, HashedFile> curFiles = curCommit.getFileDescriptions();
-        Map<Path, HashedFile> resFiles = new HashMap<>();
+        Map<Path, TrackedFile> sourceFiles = commonPredecessor.getFiles()
+                .collect(Collectors.toMap(TrackedFile::getName, file -> file));
+        Map<Path, TrackedFile> mergedFiles = commitToMerge.getFiles()
+                .collect(Collectors.toMap(TrackedFile::getName, file -> file));
+        Map<Path, TrackedFile> curFiles = curCommit.getFiles()
+                .collect(Collectors.toMap(TrackedFile::getName, file -> file));
+        Map<Path, TrackedFile> resFiles = new HashMap<>();
 
         resFiles.putAll(sourceFiles);
         curFiles.forEach((path, hashedFile) -> {
@@ -63,7 +67,7 @@ public abstract class Merger {
 
         StagingZone stagingZone = Repository.getStagingZone();
         stagingZone.wipe();
-        resFiles.forEach((path, desc) -> stagingZone.addFile(desc));
+        resFiles.forEach((path, desc) -> stagingZone.add(desc));
 
         Commit mergedCommit = new Commit("Branch " + branchToMerge.getName() + " merged.");
         WorkingDirectory workingDirectory = Repository.getWorkingDirectory();

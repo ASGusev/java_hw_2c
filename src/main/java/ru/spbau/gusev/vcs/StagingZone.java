@@ -29,7 +29,7 @@ public class StagingZone {
      * Adds a file to the staging directory, including it into the next commit.
      * @param file the file to add represented by a HashedFile object.
      */
-    protected void addFile(@Nonnull HashedFile file) {
+    protected void add(@Nonnull TrackedFile file) {
         stageHashDir.add(file);
         stageHashDir.writeHashes();
     }

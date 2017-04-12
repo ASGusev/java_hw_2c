@@ -27,16 +27,13 @@ public class CommitTest {
             Files.write(Paths.get(TEST_FILE_NAME), TEST_CONTENT.getBytes());
             HashedFile testFile = Repository.getWorkingDirectory().
                     getHashedFile(TEST_FILE_NAME);
-            Repository.getStagingZone().addFile(testFile);
+            Repository.getStagingZone().add(testFile);
             Commit commit = new Commit(MESSAGE);
             Path commitDir = Paths.get(Repository.REPO_DIR_NAME, Repository.COMMITS_DIR_NAME,
                     commit.getNumber().toString());
-            List<String> committedContent = Files.readAllLines(
-                    commitDir.resolve(Commit.COMMIT_CONTENT_DIR).resolve(TEST_FILE_NAME));
-            Assert.assertEquals(EXPECTED_CONTENT, committedContent);
 
             Scanner metadataScanner = new Scanner(
-                    commitDir.resolve(Commit.COMMIT_METADATA_FILE));
+                    commitDir.resolve("metadata"));
             metadataScanner.next();
             Assert.assertEquals(Repository.getCurBranch().getName(),
                     metadataScanner.next());

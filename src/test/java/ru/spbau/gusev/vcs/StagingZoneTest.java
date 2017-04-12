@@ -27,7 +27,7 @@ public class StagingZoneTest {
             String expectedHash = FILE_NAME + " " + HashedFile.calcFileHash(FILE_NAME);
 
             StagingZone stagingZone = new StagingZone(stageDir, stageList);
-            stagingZone.addFile(new HashedFile(filePath, Paths.get(".")));
+            stagingZone.add(new HashedFile(filePath, Paths.get(".")));
             Assert.assertTrue(Files.exists(stageDir.resolve(FILE_NAME)));
             List<String> stageHashes = Files.readAllLines(stageList);
             Assert.assertEquals(Collections.singletonList(expectedHash), stageHashes);

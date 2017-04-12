@@ -56,7 +56,7 @@ public class VCS {
      */
     public static void addFile(@Nonnull String path) throws BadRepoException, NoSuchFileException {
         HashedFile file = Repository.getWorkingDirectory().getHashedFile(path);
-        Repository.getStagingZone().addFile(file);
+        Repository.getStagingZone().add(file);
     }
 
     /**
@@ -190,7 +190,7 @@ public class VCS {
         Commit currentCommit = Repository.getCurrentCommit();
         return Repository.getStagingZone().getFiles()
                 .filter(file -> {
-                    HashedFile fileInCommit = currentCommit.getHashedFile(file.getName());
+                    TrackedFile fileInCommit = currentCommit.getFile(file.getName());
                     return  (fileInCommit == null || !file.equals(fileInCommit));
                 })
                 .map(HashedFile::toString)

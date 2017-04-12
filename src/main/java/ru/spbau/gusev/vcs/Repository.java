@@ -21,11 +21,14 @@ public abstract class Repository {
     protected static final String COMMITS_COUNTER_FILENAME = "commit";
     protected static final String POSITION_FILENAME = "position";
     protected static final String DEFAULT_BRANCH = "master";
-    protected static final String STAGE_DIR = "stage";
-    protected static final String STAGE_LIST = "stage_list";
+    private static final String STAGE_DIR = "stage";
+    private static final String STAGE_LIST = "stage_list";
+    private static final String COMMITS_FILES_STORAGE = "commits_files";
+    private static final String COMMITS_FILES_LIST = "commits_files_list";
 
     private static StagingZone stage;
     private static WorkingDirectory workingDirectory;
+    private static IntersectedFolderStorage commitStorage;
 
     /**
      * Initialises a repository in the current directory. A folder with all the
@@ -43,7 +46,8 @@ public abstract class Repository {
             throw new IllegalArgumentException();
         }
         try {
-            Files.createDirectory(Paths.get(Repository.REPO_DIR_NAME));
+            Files.createDirectory(Paths.get(REPO_DIR_NAME));
+            Files.createDirectory(Paths.get(REPO_DIR_NAME, COMMITS_FILES_STORAGE));
 
             //Setting username
             Files.write(Paths.get(REPO_DIR_NAME, USERNAME_FILE), author.getBytes());
@@ -264,8 +268,9 @@ public abstract class Repository {
             VCS.BadRepoException, VCS.NoSuchCommitException {
         Commit curCommit = Repository.getCurrentCommit();
         curCommit.removeFrom(getWorkingDirectory());
+        getStagingZone().wipe();
         Commit newCommit = new Commit(commitID);
-        newCommit.checkout(workingDirectory);
+        newCommit.checkout(getWorkingDirectory());
     }
 
     /**
@@ -326,5 +331,19 @@ public abstract class Repository {
         } catch (Error e) {
             throw new VCS.BadRepoException();
         }
+    }
+
+    /**
+     * Gets a IntersectedFolderStorage with files form the commits.
+     * @return
+     */
+    @Nonnull
+    protected static IntersectedFolderStorage getCommitStorage() {
+        if (commitStorage == null) {
+            commitStorage = new IntersectedFolderStorage(
+                    Paths.get(REPO_DIR_NAME, COMMITS_FILES_STORAGE),
+                    Paths.get(REPO_DIR_NAME, COMMITS_FILES_LIST));
+        }
+        return commitStorage;
     }
 }

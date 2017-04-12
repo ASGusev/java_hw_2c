@@ -70,13 +70,13 @@ public class RepositoryTest {
             WorkingDirectory workingDirectory = Repository.getWorkingDirectory();
 
             Files.write(path1, "1.1".getBytes());
-            stagingZone.addFile(workingDirectory.getHashedFile(FILE_1));
+            stagingZone.add(workingDirectory.getHashedFile(FILE_1));
             Commit commit1 = new Commit(FILE_1);
 
             Files.write(path1, "1.2".getBytes());
             Files.write(path2, "2.1".getBytes());
-            stagingZone.addFile(workingDirectory.getHashedFile(FILE_1));
-            stagingZone.addFile(workingDirectory.getHashedFile(FILE_2));
+            stagingZone.add(workingDirectory.getHashedFile(FILE_1));
+            stagingZone.add(workingDirectory.getHashedFile(FILE_2));
             Commit commit2 = new Commit(FILE_2);
 
             Repository.checkoutCommit(commit1.getNumber());

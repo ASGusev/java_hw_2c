@@ -36,16 +36,17 @@ public class WorkingDirectory {
     }
 
     /**
-     * Copies the given HashedFile to the working directory.
+     * Copies the given TrackedFile to the working directory.
      * @param file the file to copy.
      */
-    protected void add(@Nonnull HashedFile file) {
+    protected void add(@Nonnull TrackedFile file) {
         try {
             Files.createDirectories(workingDir.resolve(file.getName()).
                     toAbsolutePath().getParent());
             Files.copy(file.getLocation(), workingDir.resolve(file.getName()),
                     StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
+            e.printStackTrace();
             throw new VCS.FileSystemError();
         }
     }

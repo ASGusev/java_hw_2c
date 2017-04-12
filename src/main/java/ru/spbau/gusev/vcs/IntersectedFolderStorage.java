@@ -159,5 +159,10 @@ public class IntersectedFolderStorage {
         public Path getLocation() {
             return folder.resolve(hash);
         }
+
+        @Override
+        public boolean equals(Object o) {
+            return o instanceof TrackedFile && hash.equals(((TrackedFile) o).getHash());
+        }
     }
 }

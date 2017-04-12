@@ -98,8 +98,8 @@ public class HashedFile implements TrackedFile {
      */
     @Override
     public boolean equals(@Nullable Object obj) {
-        return (obj != null) && (obj instanceof HashedFile) &&
-                hash.equals(((HashedFile) obj).hash);
+        return (obj != null) && (obj instanceof TrackedFile) &&
+                hash.equals(((TrackedFile) obj).getHash());
     }
 
     /**

@@ -29,8 +29,8 @@ public class MergerTest {
 
             Files.write(FILE_TO_KEEP, KEPT_CONTENT.getBytes());
             Files.write(FILE_TO_UPDATE, V1.getBytes());
-            stagingZone.addFile(new HashedFile(FILE_TO_KEEP, Paths.get(".")));
-            stagingZone.addFile(new HashedFile(FILE_TO_UPDATE, Paths.get(".")));
+            stagingZone.add(new HashedFile(FILE_TO_KEEP, Paths.get(".")));
+            stagingZone.add(new HashedFile(FILE_TO_UPDATE, Paths.get(".")));
             Commit masterCommit1 = new Commit("m1");
 
             Repository.checkoutCommit(masterCommit1.getNumber());
@@ -38,8 +38,8 @@ public class MergerTest {
 
             Files.write(FILE_TO_CREATE, CREATED_CONTENT.getBytes());
             Files.write(FILE_TO_UPDATE, V2.getBytes());
-            stagingZone.addFile(new HashedFile(FILE_TO_UPDATE, Paths.get(".")));
-            stagingZone.addFile(new HashedFile(FILE_TO_CREATE, Paths.get(".")));
+            stagingZone.add(new HashedFile(FILE_TO_UPDATE, Paths.get(".")));
+            stagingZone.add(new HashedFile(FILE_TO_CREATE, Paths.get(".")));
             Commit workCommit = new Commit("w1");
 
             Repository.checkoutCommit(masterCommit1.getNumber());
@@ -86,19 +86,19 @@ public class MergerTest {
             Files.write(FILE_UPDATED_IN_MASTER, "v1".getBytes());
             Files.write(FILE_UPDATED_IN_WORK, "v1".getBytes());
             Files.write(FILE_UPDATED_IN_BOTH, "v1".getBytes());
-            stagingZone.addFile(new HashedFile(FILE_UPDATED_IN_MASTER, curDir));
-            stagingZone.addFile(new HashedFile(FILE_UPDATED_IN_WORK, curDir));
-            stagingZone.addFile(new HashedFile(FILE_UPDATED_IN_BOTH, curDir));
+            stagingZone.add(new HashedFile(FILE_UPDATED_IN_MASTER, curDir));
+            stagingZone.add(new HashedFile(FILE_UPDATED_IN_WORK, curDir));
+            stagingZone.add(new HashedFile(FILE_UPDATED_IN_BOTH, curDir));
             Commit masterCommit1 = new Commit("v1");
 
             Files.write(FILE_UPDATED_IN_MASTER, "v2".getBytes());
             Files.write(FILE_UPDATED_IN_BOTH, "v2".getBytes());
             Files.write(FILE_CREATED_IN_MASTER, "v2".getBytes());
             Files.write(FILE_CREATED_IN_BOTH, "v2".getBytes());
-            stagingZone.addFile(new HashedFile(FILE_UPDATED_IN_MASTER, curDir));
-            stagingZone.addFile(new HashedFile(FILE_UPDATED_IN_BOTH, curDir));
-            stagingZone.addFile(new HashedFile(FILE_CREATED_IN_MASTER, curDir));
-            stagingZone.addFile(new HashedFile(FILE_CREATED_IN_BOTH, curDir));
+            stagingZone.add(new HashedFile(FILE_UPDATED_IN_MASTER, curDir));
+            stagingZone.add(new HashedFile(FILE_UPDATED_IN_BOTH, curDir));
+            stagingZone.add(new HashedFile(FILE_CREATED_IN_MASTER, curDir));
+            stagingZone.add(new HashedFile(FILE_CREATED_IN_BOTH, curDir));
             Commit masterCommit2 = new Commit("v2");
 
             Repository.checkoutCommit(masterCommit1.getNumber());
@@ -107,10 +107,10 @@ public class MergerTest {
             Files.write(FILE_UPDATED_IN_BOTH, "v3".getBytes());
             Files.write(FILE_CREATED_IN_WORK, "v3".getBytes());
             Files.write(FILE_CREATED_IN_BOTH, "v3".getBytes());
-            stagingZone.addFile(new HashedFile(FILE_UPDATED_IN_WORK, curDir));
-            stagingZone.addFile(new HashedFile(FILE_UPDATED_IN_BOTH, curDir));
-            stagingZone.addFile(new HashedFile(FILE_CREATED_IN_WORK, curDir));
-            stagingZone.addFile(new HashedFile(FILE_CREATED_IN_BOTH, curDir));
+            stagingZone.add(new HashedFile(FILE_UPDATED_IN_WORK, curDir));
+            stagingZone.add(new HashedFile(FILE_UPDATED_IN_BOTH, curDir));
+            stagingZone.add(new HashedFile(FILE_CREATED_IN_WORK, curDir));
+            stagingZone.add(new HashedFile(FILE_CREATED_IN_BOTH, curDir));
             Commit workCommit = new Commit("v3");
 
             Repository.checkoutCommit(masterCommit2.getNumber());

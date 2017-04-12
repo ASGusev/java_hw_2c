@@ -142,7 +142,7 @@ public class HashedDirectory {
      * Copies a file represented by a HashedFile object into the folder.
      * @param file the file to copy.
      */
-    protected void add(@Nonnull HashedFile file) {
+    protected void add(@Nonnull TrackedFile file) {
         try {
             Path newFilePath = dir.resolve(file.getName());
 
