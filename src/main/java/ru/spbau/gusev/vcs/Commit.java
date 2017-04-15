@@ -16,7 +16,6 @@ import java.util.stream.Stream;
  * A class representing a commit in the repository.
  */
 public class Commit {
-    private static final String COMMIT_CONTENT_DIR = "content";
     private static final String COMMIT_METADATA_FILE = "metadata";
     private static final String COMMIT_FILES_LIST = "files_list";
 
@@ -40,10 +39,10 @@ public class Commit {
             VCS.BadPositionException {
         if (Files.notExists(Paths.get(Repository.REPO_DIR_NAME,
                 Repository.COMMITS_DIR_NAME))) {
-            throw new VCS.BadRepoException();
+            throw new VCS.BadRepoException("Commits directory not found.");
         }
         if (message.isEmpty()) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Empty commit message.");
         }
 
         number = Repository.getCommitsNumber();
@@ -56,7 +55,8 @@ public class Commit {
         father = Repository.getCurrentCommitNumber();
 
         if (!branch.getHeadNumber().equals(father)) {
-            throw new VCS.BadPositionException();
+            throw new VCS.BadPositionException("Attempt to create a commit not in " +
+                    "the head of a branch.");
         }
 
         try {
@@ -83,7 +83,7 @@ public class Commit {
             try {
                 HashedDirectory.deleteDir(rootDir);
             } catch (IOException e1) {}
-            throw new VCS.FileSystemError();
+            throw new VCS.FileSystemError("Error writing new commit data.");
         }
     }
 
@@ -123,9 +123,9 @@ public class Commit {
             contentFolder = new IntersectedFolder(Repository.getCommitStorage(),
                     rootDir.resolve(COMMIT_FILES_LIST));
         } catch (IOException e) {
-            throw new VCS.FileSystemError();
+            throw new VCS.FileSystemError("Error reading commit data.");
         } catch (VCS.NoSuchBranchException e) {
-            throw new VCS.BadRepoException();
+            throw new VCS.BadRepoException("Requested commit not found.");
         }
     }
 
@@ -185,7 +185,7 @@ public class Commit {
         try {
             return new Commit(father);
         } catch (VCS.NoSuchCommitException e) {
-            throw new VCS.BadRepoException();
+            throw new VCS.BadRepoException("Error reading commit's father.");
         }
     }
 
@@ -306,18 +306,19 @@ public class Commit {
      * Deletes the commit from the repository.
      */
     protected void delete() {
+        contentFolder.getFiles()
+                .forEach(file -> {
+                    try {
+                        contentFolder.delete(file.getName());
+                    } catch (VCS.NoSuchFileException e) {
+                        throw new VCS.FileSystemError("A file from commit cannot " +
+                                "be found.");
+                    }
+                });
         try {
-            contentFolder.getFiles()
-                    .forEach(file -> {
-                        try {
-                            contentFolder.delete(file.getName());
-                        } catch (VCS.NoSuchFileException e) {
-                            throw new VCS.FileSystemError();
-                        }
-                    });
             HashedDirectory.deleteDir(rootDir);
         } catch (IOException e) {
-            throw new VCS.FileSystemError();
+            throw new VCS.FileSystemError("Error deleting commit's folder.");
         }
     }
 }

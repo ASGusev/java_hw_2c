@@ -1,14 +1,11 @@
 package ru.spbau.gusev.vcs;
 
-import jdk.nashorn.api.scripting.NashornScriptEngine;
-
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import java.util.stream.Collectors;
@@ -41,25 +38,29 @@ public class Branch {
     protected static Branch create(@Nonnull String name) throws VCS.BranchAlreadyExistsException,
             VCS.BadRepoException {
         if (name.isEmpty()) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Empty branch name.");
         }
+
         Path descPath = Paths.get(Repository.REPO_DIR_NAME,
                 Repository.BRANCHES_DIR_NAME, name);
         if (Files.exists(descPath)) {
             throw new VCS.BranchAlreadyExistsException();
         }
+        if (!Files.isDirectory(descPath.getParent())) {
+            throw new VCS.BadRepoException("Branches folder not found.");
+        }
         try {
-            Files.write(descPath, (Repository.getCurrentCommitNumber().toString() + '\n').
-                    getBytes());
+            Files.write(descPath, (Repository.getCurrentCommitNumber().toString()
+                    + '\n').getBytes());
         } catch (IOException e) {
-            throw new VCS.FileSystemError();
+            throw new VCS.FileSystemError("Branch description creation error.");
         }
         try {
             Branch newBranch = new Branch(name);
             Repository.setCurrentBranch(newBranch);
             return newBranch;
         } catch (VCS.NoSuchBranchException e) {
-            throw new VCS.BadRepoException();
+            throw new VCS.BadRepoException("Branch creation failed.");
         }
     }
 
@@ -92,7 +93,8 @@ public class Branch {
             Files.write(commitsListPath, (newCommit.getNumber().toString() + '\n')
                             .getBytes(), StandardOpenOption.APPEND);
         } catch (IOException e) {
-            throw new VCS.FileSystemError();
+            throw new VCS.FileSystemError("Error writing commit number to branch's " +
+                    "list.");
         }
     }
 
@@ -109,12 +111,12 @@ public class Branch {
                 headNumber = scanner.next();
             }
         } catch (IOException e) {
-            throw new VCS.FileSystemError();
+            throw new VCS.FileSystemError("Error reading branch's commits list.");
         }
         try {
             return (Integer.valueOf(headNumber));
         } catch (NumberFormatException e) {
-            throw new VCS.BadRepoException();
+            throw new VCS.BadRepoException("Incorrect branch description format.");
         }
     }
 
@@ -128,7 +130,7 @@ public class Branch {
         try {
             return new Commit(getHeadNumber());
         } catch (VCS.NoSuchCommitException e) {
-            throw new VCS.BadRepoException();
+            throw new VCS.BadRepoException("Branch's head commit not found.");
         }
     }
 
@@ -150,9 +152,9 @@ public class Branch {
                 }
             }).collect(Collectors.toList());
         } catch (IOException e) {
-            throw new VCS.FileSystemError();
+            throw new VCS.FileSystemError("Error reading branch's commit list.");
         } catch (Error e) {
-            throw new VCS.BadRepoException();
+            throw new VCS.BadRepoException("Error reading commit data.");
         }
         return commitList;
     }
@@ -182,10 +184,10 @@ public class Branch {
                 }
             });
             Files.delete(commitsListPath);
-        } catch (IOException e){
+        } catch (IOException e) {
             throw new VCS.FileSystemError();
         } catch (Error e) {
-            throw new VCS.BadRepoException();
+            throw new VCS.BadRepoException("Error deleting commit.");
         }
     }
 

@@ -96,7 +96,8 @@ public class HashedDirectory {
      */
     protected void writeHashes() {
         if (hashesPath == null) {
-            throw new IllegalStateException();
+            throw new IllegalStateException("Attempt to write hashes in a " +
+                    "HashedDirectory without hashes list path specified.");
         }
         try {
             if (Files.exists(hashesPath)) {
@@ -108,12 +109,13 @@ public class HashedDirectory {
                 try {
                     hashWriter.write(path.toString() + ' ' + s.getHash() + '\n');
                 } catch (IOException e) {
-                    throw new VCS.FileSystemError();
+                    throw new VCS.FileSystemError("Error writing hashes to " +
+                            path.toString());
                 }
             });
             hashWriter.close();
         } catch (IOException e) {
-            throw new VCS.FileSystemError();
+            throw new VCS.FileSystemError(e.getMessage());
         }
     }
 
@@ -152,7 +154,7 @@ public class HashedDirectory {
 
             hashes.put(file.getName(), new HashedFile(file.getName(), dir, file.getHash()));
         } catch (IOException e) {
-            throw new VCS.FileSystemError();
+            throw new VCS.FileSystemError(e.getMessage());
         }
     }
 
@@ -180,7 +182,7 @@ public class HashedDirectory {
         try {
             Files.delete(dir.resolve(path));
         } catch (IOException e) {
-            throw new VCS.FileSystemError();
+            throw new VCS.FileSystemError(e.getMessage());
         }
     }
 

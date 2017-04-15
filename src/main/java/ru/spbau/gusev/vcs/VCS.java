@@ -125,7 +125,7 @@ public class VCS {
         try {
             Repository.checkoutCommit(newBranch.getHeadNumber());
         } catch (NoSuchCommitException e) {
-            throw new BadRepoException();
+            throw new BadRepoException("Branch's head commit not found.");
         }
     }
 
@@ -326,17 +326,37 @@ public class VCS {
     /**
      * An exception thrown if the repository service folder is damaged.
      */
-    public static class BadRepoException extends Exception{}
+    public static class BadRepoException extends Exception {
+        BadRepoException() {}
+
+        BadRepoException(String message) {
+            super(message);
+        }
+    }
 
     /**
      * An error thrown if the filesystem throws an IOException.
      */
-    public static class FileSystemError extends Error{}
+    public static class FileSystemError extends Error {
+        public FileSystemError() {
+        }
+
+        public FileSystemError(String message) {
+            super(message);
+        }
+    }
 
     /**
      * An exception thrown if the specified file does not exist.
      */
-    public static class NoSuchFileException extends Exception{}
+    public static class NoSuchFileException extends Exception {
+        public NoSuchFileException() {
+        }
+
+        public NoSuchFileException(String message) {
+            super(message);
+        }
+    }
 
     /**
      * An exception thrown if the specified branch does not exist.
@@ -352,7 +372,14 @@ public class VCS {
      * An exception thrown if an operation is impossible because of the head
      * position.
      */
-    public static class BadPositionException extends Exception{}
+    public static class BadPositionException extends Exception {
+        public BadPositionException() {
+        }
+
+        public BadPositionException(String message) {
+            super(message);
+        }
+    }
 
     /**
      * An exception thrown in case of an attempt to make a commit with no changes since

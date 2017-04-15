@@ -34,16 +34,17 @@ public class IntersectedFolder {
                 for (String line: Files.readAllLines(listPath)) {
                     String[] parts = line.split(" ");
                     if (parts.length != 2) {
-                        throw new IllegalStateException();
+                        throw new IllegalStateException("Incorrect intersected " +
+                                "folder files list format");
                     }
                     Path name = Paths.get(parts[0]);
                     String hash = parts[1];
                     files.put(name, storage.getFile(hash, name));
                 }
             } catch (IOException e) {
-                throw new VCS.FileSystemError();
+                throw new VCS.FileSystemError(e.getMessage());
             } catch (VCS.NoSuchFileException e) {
-                throw new IllegalStateException();
+                throw new IllegalStateException("Intersected folder file not found");
             }
         }
     }
@@ -91,13 +92,13 @@ public class IntersectedFolder {
                 try {
                     listWriter.write(path + " " + sharedHashedFile.getHash() + "\n");
                 } catch (IOException e) {
-                    throw new VCS.FileSystemError();
+                    throw new VCS.FileSystemError(e.getMessage());
                 }
             });
             listWriter.close();
             storage.writeCounters();
         } catch (IOException e) {
-            throw new VCS.FileSystemError();
+            throw new VCS.FileSystemError(e.getMessage());
         }
     }
 

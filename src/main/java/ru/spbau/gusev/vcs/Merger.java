@@ -19,14 +19,10 @@ public abstract class Merger {
      * branch.
      */
     @Nonnull
-    protected static Commit merge(@Nonnull Branch branchToMerge) throws VCS.BadRepoException,
-            VCS.BadPositionException{
+    protected static Commit merge(@Nonnull Branch branchToMerge) throws
+            VCS.BadRepoException, VCS.BadPositionException {
         Commit curCommit = Repository.getCurrentCommit();
         Commit commitToMerge = branchToMerge.getHead();
-
-        if (!curCommit.getBranch().getHead().equals(curCommit)) {
-            throw new VCS.BadPositionException();
-        }
 
         List<Commit> curCommitPedigree = curCommit.getPedigree();
         List<Commit> commitToMergePedigree = commitToMerge.getPedigree();

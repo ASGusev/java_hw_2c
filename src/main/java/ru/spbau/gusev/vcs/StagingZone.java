@@ -18,9 +18,13 @@ public class StagingZone {
      * @param stagePath the path to the staging directory.
      * @param listPath the path to the list of staged files.
      */
-    protected StagingZone(Path stagePath, Path listPath) throws VCS.NoSuchFileException {
-        if (!Files.isDirectory(stagePath) || !Files.isRegularFile(listPath)) {
-            throw new VCS.NoSuchFileException();
+    protected StagingZone(Path stagePath, Path listPath) throws
+            VCS.NoSuchFileException {
+        if (!Files.isDirectory(stagePath)) {
+            throw new VCS.NoSuchFileException("Stage directory not found.");
+        }
+        if (!Files.isRegularFile(listPath)) {
+            throw new VCS.NoSuchFileException("Stage list not found.");
         }
         stageHashDir = new HashedDirectory(stagePath, listPath);
     }

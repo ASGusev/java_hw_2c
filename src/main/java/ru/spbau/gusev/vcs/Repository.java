@@ -43,7 +43,7 @@ public abstract class Repository {
             throw new VCS.RepoAlreadyExistsException();
         }
         if (author.isEmpty()) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Empty username.");
         }
         try {
             Files.createDirectory(Paths.get(REPO_DIR_NAME));
@@ -165,11 +165,15 @@ public abstract class Repository {
         if (!Files.exists(Paths.get(REPO_DIR_NAME, USERNAME_FILE))) {
             throw new VCS.BadRepoException();
         }
+        if (name.isEmpty()) {
+            throw new IllegalArgumentException("Empty username.");
+        }
+
         try (FileWriter writer = new FileWriter(
                 Paths.get(REPO_DIR_NAME, USERNAME_FILE).toString())) {
             writer.write(name);
         } catch (IOException e){
-            throw new VCS.FileSystemError();
+            throw new VCS.FileSystemError(e.getMessage());
         }
     }
 
@@ -205,7 +209,7 @@ public abstract class Repository {
         try {
             return new Commit(getCurrentCommitNumber());
         } catch (VCS.NoSuchCommitException e){
-            throw new VCS.BadRepoException();
+            throw new VCS.BadRepoException("Current commit not found.");
         }
     }
 
@@ -219,7 +223,7 @@ public abstract class Repository {
             List<String> pos = Files.readAllLines(posPath);
             Files.write(posPath, (branch.getName() + '\n' + pos.get(1)).getBytes());
         } catch (IOException e) {
-            throw new VCS.FileSystemError();
+            throw new VCS.FileSystemError(e.getMessage());
         }
     }
 
@@ -231,13 +235,13 @@ public abstract class Repository {
     protected static void setCurrentCommit(@Nonnull Commit commit) throws VCS.BadRepoException {
         Path posPath = Paths.get(REPO_DIR_NAME, POSITION_FILENAME);
         if (Files.notExists(posPath)) {
-            throw new VCS.BadRepoException();
+            throw new VCS.BadRepoException("Position file not found.");
         }
         try {
             Files.write(posPath, (commit.getBranch().getName() + '\n' +
                     commit.getNumber().toString()).getBytes());
         } catch (IOException e) {
-            throw new VCS.FileSystemError();
+            throw new VCS.FileSystemError(e.getMessage());
         }
     }
 
@@ -249,12 +253,12 @@ public abstract class Repository {
     protected static void updateCommitCounter(@Nonnull Integer val) throws VCS.BadRepoException {
         Path counterPath = Paths.get(REPO_DIR_NAME, COMMITS_COUNTER_FILENAME);
         if (Files.notExists(counterPath)) {
-            throw new VCS.BadRepoException();
+            throw new VCS.BadRepoException("Commits counter file not found.");
         }
         try {
             Files.write(counterPath, val.toString().getBytes());
         } catch (IOException e){
-            throw new VCS.FileSystemError();
+            throw new VCS.FileSystemError(e.getMessage());
         }
     }
 
@@ -285,7 +289,7 @@ public abstract class Repository {
                  stage = new StagingZone(Paths.get(REPO_DIR_NAME, STAGE_DIR),
                          Paths.get(REPO_DIR_NAME, STAGE_LIST));
              } catch (VCS.NoSuchFileException e) {
-                 throw new VCS.BadRepoException();
+                 throw new VCS.BadRepoException(e.getMessage());
              }
          }
          return stage;
@@ -313,7 +317,7 @@ public abstract class Repository {
     protected static List<Branch> getBranches() throws VCS.BadRepoException {
         Path branchesDir = Paths.get(REPO_DIR_NAME, BRANCHES_DIR_NAME);
         if (!Files.isDirectory(branchesDir)) {
-            throw new VCS.BadRepoException();
+            throw new VCS.BadRepoException("Branches dir not found");
         }
 
         try {
@@ -328,9 +332,9 @@ public abstract class Repository {
                     })
                     .collect(Collectors.toList());
         } catch (IOException e) {
-            throw new VCS.FileSystemError();
+            throw new VCS.FileSystemError(e.getMessage());
         } catch (Error e) {
-            throw new VCS.BadRepoException();
+            throw new VCS.BadRepoException("Error reading branch.");
         }
     }
 

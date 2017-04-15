@@ -27,7 +27,9 @@ public class WorkingDirectory {
                 for (String line: Files.readAllLines(ignoredListPath)) {
                     try {
                         ignoredPaths.add(workingDir.resolve(line));
-                    } catch (InvalidPathException e) {}
+                    } catch (InvalidPathException e) {
+                        continue;
+                    }
                 }
             } catch (IOException e) {
                 throw new VCS.FileSystemError();
@@ -46,8 +48,7 @@ public class WorkingDirectory {
             Files.copy(file.getLocation(), workingDir.resolve(file.getName()),
                     StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
-            e.printStackTrace();
-            throw new VCS.FileSystemError();
+            throw new VCS.FileSystemError(e.getMessage());
         }
     }
 
@@ -86,7 +87,7 @@ public class WorkingDirectory {
                 HashedDirectory.deleteDir(path);
             }
         } catch (IOException e) {
-            throw new VCS.FileSystemError();
+            throw new VCS.FileSystemError(e.getMessage());
         }
         return true;
     }
@@ -105,11 +106,11 @@ public class WorkingDirectory {
                         try {
                             Files.delete(path);
                         } catch (IOException e) {
-                            throw new VCS.FileSystemError();
+                            throw new VCS.FileSystemError(e.getMessage());
                         }
                     });
         } catch (IOException e) {
-            throw new VCS.FileSystemError();
+            throw new VCS.FileSystemError(e.getMessage());
         }
     }
 
@@ -123,9 +124,10 @@ public class WorkingDirectory {
             return Files.walk(workingDir)
                     .filter(Files::isRegularFile)
                     .filter(this::isNotIgnored)
-                    .map(path -> new HashedFile(workingDir.relativize(path), workingDir));
+                    .map(path -> new HashedFile(workingDir.relativize(path),
+                            workingDir));
         } catch (IOException e) {
-            throw new VCS.FileSystemError();
+            throw new VCS.FileSystemError(e.getMessage());
         }
     }
 

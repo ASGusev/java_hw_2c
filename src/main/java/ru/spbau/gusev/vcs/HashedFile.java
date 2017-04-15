@@ -56,8 +56,7 @@ public class HashedFile implements TrackedFile {
             while (stream.read() != -1) {}
             hash = messageDigest.digest();
         } catch (IOException e) {
-            e.printStackTrace();
-            throw new VCS.FileSystemError();
+            throw new VCS.FileSystemError(e.getMessage());
         } catch (NoSuchAlgorithmException e) {}
         return new BigInteger(1, hash).toString();
     }

@@ -32,14 +32,15 @@ public class IntersectedFolderStorage {
                 for (String line: Files.readAllLines(counterList)) {
                     String[] parts = line.split(" ");
                     if (parts.length != 2) {
-                        throw new IllegalStateException();
+                        throw new IllegalStateException("Incorrect " +
+                                "IntersectedFolderStorage file list format.");
                     }
                     String hash = parts[0];
                     Integer counter = Integer.valueOf(parts[1]);
                     counters.put(hash, counter);
                 }
             } catch (IOException e) {
-                throw new VCS.FileSystemError();
+                throw new VCS.FileSystemError(e.getMessage());
             }
         }
     }
@@ -58,7 +59,7 @@ public class IntersectedFolderStorage {
             try {
                 Files.copy(file.getLocation(), newPath);
             } catch (IOException e) {
-                throw new VCS.FileSystemError();
+                throw new VCS.FileSystemError(e.getMessage());
             }
         }
         counters.put(file.getHash(), ++refsCounter);
@@ -96,12 +97,12 @@ public class IntersectedFolderStorage {
                 try {
                     countersWriter.write(hash + ' ' + counter.toString() + '\n');
                 } catch (IOException e){
-                    throw new VCS.FileSystemError();
+                    throw new VCS.FileSystemError(e.getMessage());
                 }
             });
             countersWriter.close();
         } catch (IOException e) {
-            throw new VCS.FileSystemError();
+            throw new VCS.FileSystemError(e.getMessage());
         }
     }
 
@@ -129,7 +130,7 @@ public class IntersectedFolderStorage {
             try {
                 Files.delete(filePath);
             } catch (IOException e) {
-                throw new VCS.FileSystemError();
+                throw new VCS.FileSystemError(e.getMessage());
             }
         } else {
             counters.put(hash, counter);
