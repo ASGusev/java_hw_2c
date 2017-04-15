@@ -19,9 +19,9 @@ public class Main {
         try {
             requestedCommand.exec(args);
         } catch (VCS.FileSystemError e) {
-            System.out.println("File system error.");
+            System.out.println("File system error:" + e.getMessage());
         } catch (Throwable t) {
-            System.out.println("Unknown error.");
+            System.out.println("Unknown error:" + t.getMessage());
         }
     }
 
@@ -55,7 +55,7 @@ public class Main {
                     try {
                         VCS.commit(args[1]);
                     } catch (VCS.BadRepoException e) {
-                        System.out.println("Incorrect repo");
+                        System.out.println("Incorrect repo: " + e.getMessage());
                     } catch (VCS.BadPositionException e) {
                         System.out.println("You must be in the head of a branch to commit.");
                     } catch (VCS.NothingToCommitException e) {
@@ -80,7 +80,7 @@ public class Main {
                         try {
                             VCS.addFile(args[i]);
                         } catch (VCS.BadRepoException e) {
-                            System.out.println("Incorrect repo.");
+                            System.out.println("Incorrect repo: " + e.getMessage());
                         } catch (VCS.NoSuchFileException e) {
                             System.out.println("File " + args[i] + " " +
                                     "cannot be found.");
@@ -99,32 +99,29 @@ public class Main {
             @Override
             protected void exec(String[] args) {
                 if (args.length == 3) {
-                    switch (args[1]) {
-                        case "branch": {
-                            try {
+                    try {
+                        switch (args[1]) {
+                            case "branch": {
                                 VCS.checkoutBranch(args[2]);
-                            } catch (VCS.BadRepoException e) {
-                                System.out.println("Incorrect repo");
-                            } catch (VCS.NoSuchBranchException e) {
-                                System.out.println("A branch called " +
-                                        args[2] + " does not exist.");
+                                break;
                             }
-                            break;
-                        }
-                        case "commit": {
-                            try {
+                            case "commit": {
                                 VCS.checkoutCommit(Integer.valueOf(args[2]));
-                            } catch (VCS.BadRepoException e) {
-                                System.out.println("Incorrect repo");
-                            } catch (VCS.NoSuchCommitException e) {
-                                System.out.println("A commit with number " +
-                                        args[2] + " does not exist.");
+                                break;
                             }
-                            break;
+                            default: {
+                                help.exec(args);
+                            }
                         }
-                        default: {
-                            help.exec(args);
-                        }
+                    } catch (VCS.BadRepoException e) {
+                        System.out.println("Incorrect repo: " +
+                                e.getMessage());
+                    } catch (VCS.NoSuchBranchException e) {
+                        System.out.println("A branch called " +
+                                args[2] + " does not exist.");
+                    } catch (VCS.NoSuchCommitException e) {
+                        System.out.println("A commit with number " +
+                                args[2] + " does not exist.");
                     }
                 } else {
                     help.exec(args);
@@ -149,7 +146,7 @@ public class Main {
                     try {
                         VCS.setUserName(args[1]);
                     } catch (VCS.BadRepoException e) {
-                        System.out.println("Incorrect repo.");
+                        System.out.println("Incorrect repo: " + e.getMessage());
                     }
                 }
             }
@@ -171,7 +168,7 @@ public class Main {
                     } catch (VCS.NoSuchBranchException e) {
                         System.out.println("Branch " + args[1] + " does not exist.");
                     } catch (VCS.BadRepoException e) {
-                        System.out.println("Incorrect repo.");
+                        System.out.println("Incorrect repo:" + e.getMessage());
                     } catch (VCS.BadPositionException e) {
                         System.out.println("You must be in the head of a branch " +
                                 "to merge another one into it.");
@@ -197,7 +194,7 @@ public class Main {
                         System.out.println("The current commit does not contain a file called "
                                 + args[1]);
                     } catch (VCS.BadRepoException e) {
-                        System.out.println("Incorrect repo.");
+                        System.out.println("Incorrect repo: " + e.getMessage());
                     }
                 }
             }
@@ -222,7 +219,7 @@ public class Main {
                         System.out.println("No file called " + args[1] + " found " +
                                 "in staging zone.");
                     } catch (VCS.BadRepoException e) {
-                        System.out.println("Incorrect repo.");
+                        System.out.println("Incorrect repo: " + e.getMessage());
                     }
                 }
             }
@@ -268,7 +265,7 @@ public class Main {
                         );
                     }
                 } catch (VCS.BadRepoException | VCS.NoSuchBranchException e) {
-                    System.out.println("Incorrect repo");
+                    System.out.println("Incorrect repo: " + e.getMessage());
                 }
 
             }
@@ -296,9 +293,8 @@ public class Main {
                     System.out.println("\nRemoved files:");
                     VCS.getRemoved().forEach(System.out::println);
                 } catch (VCS.BadRepoException e) {
-                    System.out.println("Incorrect repo");
+                    System.out.println("Incorrect repo: " + e.getMessage());
                 }
-
             }
 
             @Override
@@ -331,7 +327,8 @@ public class Main {
                                 try {
                                     VCS.deleteBranch(args[2]);
                                 } catch (VCS.BadRepoException e) {
-                                    System.out.println("Incorrect repo");
+                                    System.out.println("Incorrect repo: " +
+                                            e.getMessage());
                                 } catch (VCS.NoSuchBranchException e) {
                                     System.out.println("A branch called " +
                                             args[2] + " does not exist.");
