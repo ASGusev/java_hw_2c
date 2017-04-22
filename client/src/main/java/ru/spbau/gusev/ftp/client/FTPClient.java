@@ -27,6 +27,8 @@ public class FTPClient {
     }
 
     public void disconnect() throws IOException {
+        socketChannel.shutdownInput();
+        socketChannel.shutdownOutput();
         socketChannel.close();
         socketChannel = null;
     }

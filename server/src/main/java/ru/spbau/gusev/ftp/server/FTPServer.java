@@ -21,11 +21,11 @@ import java.util.stream.Collectors;
 public class FTPServer {
     private AsynchronousServerSocketChannel serverSocketChannel;
     private final int port;
-    private final Set<ClientConnection> clientConnections;
+    private final Set<ClientConnection> clients;
 
     FTPServer(int port) {
         this.port = port;
-        clientConnections = new HashSet<>();
+        clients = new HashSet<>();
     }
 
     public void start() throws IOException {
@@ -36,8 +36,8 @@ public class FTPServer {
 
     public void stop() throws IOException {
         serverSocketChannel.close();
-        clientConnections.forEach(ClientConnection::close);
-        clientConnections.clear();
+        clients.forEach(ClientConnection::close);
+        clients.clear();
     }
 
     private CompletionHandler<AsynchronousSocketChannel, Object> connectionHandler =
@@ -47,7 +47,7 @@ public class FTPServer {
                 public void completed(AsynchronousSocketChannel result, Object attachment) {
                     ClientConnection client = new ClientConnection(result);
                     client.startListening();
-                    clientConnections.add(client);
+                    clients.add(client);
                     serverSocketChannel.accept(null, this);
                 }
 
@@ -78,6 +78,14 @@ public class FTPServer {
 
         @Override
         public void completed(Integer result, Object attachment) {
+            if (result == -1) {
+                try{
+                    socketChannel.close();
+                } catch (IOException e) {}
+                clients.remove(this);
+                return;
+            }
+
             requestBuffer.flip();
             int requestType = requestBuffer.getInt();
             int pathLen = requestBuffer.getInt();
@@ -103,7 +111,7 @@ public class FTPServer {
 
         @Override
         public void failed(Throwable exc, Object attachment) {
-            clientConnections.remove(this);
+            clients.remove(this);
         }
 
         private void close() {
