@@ -1,0 +1,135 @@
+package ru.spbau.gusev.ftp.client;
+
+import java.io.*;
+import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.channels.ByteChannel;
+import java.nio.channels.FileChannel;
+import java.nio.channels.SocketChannel;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+
+public class FTPClient {
+    private SocketChannel socketChannel;
+    private final static int COMMAND_CODE_GET = 1;
+    private final static int COMMAND_CODE_LIST = 2;
+    private final static int MAX_PATH_LEN = 1 << 11;
+    private final static int MAX_REQUEST_SIZE = Integer.BYTES +
+            MAX_PATH_LEN * Character.BYTES;
+    private final static int FILE_BUFFER_SIZE = 1 << 12;
+
+    public void connect(String address, int port) throws IOException {
+        socketChannel = SocketChannel.open(new InetSocketAddress(address, port));
+    }
+
+    public void disconnect() throws IOException {
+        socketChannel.close();
+        socketChannel = null;
+    }
+
+    public void executeGet(String path) throws IOException {
+        ByteBuffer requestMessageBuffer = ByteBuffer.allocate(MAX_REQUEST_SIZE);
+        requestMessageBuffer.putInt(COMMAND_CODE_GET);
+        requestMessageBuffer.putInt(path.length());
+        for (char c: path.toCharArray()) {
+            requestMessageBuffer.putChar(c);
+        }
+        requestMessageBuffer.flip();
+        socketChannel.write(requestMessageBuffer);
+
+        ByteBuffer sizeBuffer = ByteBuffer.allocate(Long.BYTES);
+        socketChannel.read(sizeBuffer);
+        sizeBuffer.flip();
+        long fileSize = sizeBuffer.getLong();
+
+        long written = 0;
+        ByteBuffer fileBuffer = ByteBuffer.allocate(FILE_BUFFER_SIZE);
+        FileChannel fileChannel = FileChannel.open(Paths.get(path));
+        while (written != fileSize) {
+            socketChannel.read(fileBuffer);
+            fileBuffer.flip();
+            while (fileBuffer.remaining() != 0) {
+                written += fileChannel.write(fileBuffer);
+            }
+            fileBuffer.clear();
+        }
+    }
+
+    public List<DirEntry> executeList(String path) throws IOException {
+        ByteBuffer requestMessageBuffer = ByteBuffer.allocate(MAX_REQUEST_SIZE);
+        requestMessageBuffer.putInt(COMMAND_CODE_LIST);
+        requestMessageBuffer.putInt(path.length());
+        for (char c: path.toCharArray()) {
+            requestMessageBuffer.putChar(c);
+        }
+        requestMessageBuffer.flip();
+        socketChannel.write(requestMessageBuffer);
+
+        ByteBuffer sizeBuffer = ByteBuffer.allocate(Integer.BYTES);
+        socketChannel.read(sizeBuffer);
+        sizeBuffer.flip();
+        int itemsNumber = sizeBuffer.getInt();
+
+        List <DirEntry> content = new ArrayList<>();
+        ChannelStringReader pathReader = new ChannelStringReader(socketChannel);
+        ByteBuffer flagBuffer = ByteBuffer.allocate(Byte.BYTES);
+        for (int i = 0; i < itemsNumber; i++) {
+            String entryPath = pathReader.read();
+            socketChannel.read(flagBuffer);
+            flagBuffer.flip();
+            boolean isDir = flagBuffer.get() == 1;
+            flagBuffer.clear();
+            content.add(new DirEntry(entryPath, isDir));
+        }
+        return content;
+    }
+
+    public static class DirEntry {
+        private String path;
+        private boolean dir;
+
+        DirEntry(String path, boolean dir) {
+            this.path = path;
+            this.dir = dir;
+        }
+
+        public String getPath() {
+            return path;
+        }
+
+        public boolean isDir() {
+            return dir;
+        }
+    }
+
+    private static class ChannelStringReader {
+        private final ByteChannel channel;
+        private final ByteBuffer sizeBuffer = ByteBuffer.allocate(Integer.BYTES);
+
+        private ChannelStringReader(ByteChannel channel) {
+            this.channel = channel;
+        }
+
+        private String read() throws IOException {
+            while (sizeBuffer.position() != sizeBuffer.capacity()) {
+                channel.read(sizeBuffer);
+            }
+            sizeBuffer.flip();
+            int stringSize = sizeBuffer.getInt();
+            sizeBuffer.clear();
+
+            ByteBuffer contentBuffer = ByteBuffer.allocate(Character.BYTES * stringSize);
+            while (contentBuffer.position() != contentBuffer.capacity()) {
+                channel.read(contentBuffer);
+            }
+            contentBuffer.flip();
+
+            char[] symbols = new char[stringSize];
+            for (int i = 0; i < stringSize; i++) {
+                symbols[i] = contentBuffer.getChar();
+            }
+            return String.valueOf(symbols);
+        }
+    }
+}
