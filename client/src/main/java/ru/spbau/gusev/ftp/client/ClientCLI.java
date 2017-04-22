@@ -1,6 +1,7 @@
 package ru.spbau.gusev.ftp.client;
 
 import java.io.IOException;
+import java.nio.file.NoSuchFileException;
 import java.util.List;
 
 public class ClientCLI {
@@ -30,7 +31,10 @@ public class ClientCLI {
                             }
                             System.out.printf("%-40s %-5s\n", entry.getPath(), type);
                         });
-                    } catch (IOException e) {
+                    } catch (NoSuchFileException e) {
+                        System.out.println("No such folder: " + path);
+                    }
+                    catch (IOException e) {
                         System.out.println("Network error.");
                     }
                     break;
@@ -45,6 +49,8 @@ public class ClientCLI {
                         client.connect(address, port);
                         client.executeGet(path);
                         client.disconnect();
+                    } catch (NoSuchFileException e) {
+                        System.out.println("No such file: " + path);
                     } catch (IOException e) {
                         System.out.println("Downloading error: " + e.getMessage());
                     }

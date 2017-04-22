@@ -6,6 +6,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;
 import java.nio.channels.FileChannel;
 import java.nio.channels.SocketChannel;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
@@ -44,9 +46,14 @@ public class FTPClient {
         sizeBuffer.flip();
         long fileSize = sizeBuffer.getLong();
 
+        if (fileSize == 0) {
+            throw new NoSuchFileException(path);
+        }
+
         long written = 0;
         ByteBuffer fileBuffer = ByteBuffer.allocate(FILE_BUFFER_SIZE);
-        FileChannel fileChannel = FileChannel.open(Paths.get(path),
+        Path targetPath = Paths.get(path);
+        FileChannel fileChannel = FileChannel.open(targetPath,
                 StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
         while (written != fileSize) {
             socketChannel.read(fileBuffer);
@@ -72,6 +79,10 @@ public class FTPClient {
         socketChannel.read(sizeBuffer);
         sizeBuffer.flip();
         int itemsNumber = sizeBuffer.getInt();
+
+        if (itemsNumber == 0) {
+            throw new NoSuchFileException(path);
+        }
 
         List <DirEntry> content = new ArrayList<>();
         ChannelStringReader pathReader = new ChannelStringReader(socketChannel);
