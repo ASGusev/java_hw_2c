@@ -7,6 +7,7 @@ import java.nio.channels.ByteChannel;
 import java.nio.channels.FileChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,7 +46,8 @@ public class FTPClient {
 
         long written = 0;
         ByteBuffer fileBuffer = ByteBuffer.allocate(FILE_BUFFER_SIZE);
-        FileChannel fileChannel = FileChannel.open(Paths.get(path));
+        FileChannel fileChannel = FileChannel.open(Paths.get(path),
+                StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
         while (written != fileSize) {
             socketChannel.read(fileBuffer);
             fileBuffer.flip();
