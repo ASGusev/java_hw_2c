@@ -18,28 +18,46 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
+/**
+ * A simple file server.
+ */
 public class FTPServer {
     private AsynchronousServerSocketChannel serverSocketChannel;
     private final int port;
     private final Set<ClientConnection> clients;
 
+    /**
+     * Creates a server for the specified port.
+     * @param port the port for the server.
+     */
     FTPServer(int port) {
         this.port = port;
         clients = new HashSet<>();
     }
 
+    /**
+     * Enables the server to accept requests.
+     * @throws IOException if an error staring up occurs.
+     */
     public void start() throws IOException {
         serverSocketChannel = AsynchronousServerSocketChannel.open();
         serverSocketChannel.bind(new InetSocketAddress(port));
         serverSocketChannel.accept(null, connectionHandler);
     }
 
+    /**
+     * Stops accepting requests.
+     * @throws IOException if an error during close operation occurs.
+     */
     public void stop() throws IOException {
         serverSocketChannel.close();
         clients.forEach(ClientConnection::close);
         clients.clear();
     }
 
+    /**
+     * A CompletionHandler for accepting new connections.
+     */
     private CompletionHandler<AsynchronousSocketChannel, Object> connectionHandler =
             new CompletionHandler<AsynchronousSocketChannel, Object>() {
 
@@ -57,6 +75,9 @@ public class FTPServer {
                 }
             };
 
+    /**
+     * A class containing all the logic of request processing.
+     */
     private class ClientConnection implements CompletionHandler<Integer, Object> {
         private final static int FILE_BUFFER_SIZE = 1 << 12;
         private final static int REQUEST_TYPE_GET = 1;
@@ -127,7 +148,7 @@ public class FTPServer {
         private void processRequestGet(Path path) {
             ByteBuffer sizeBuffer = ByteBuffer.allocate(Long.BYTES);
             if (Files.isRegularFile(path)) {
-                long size = 0;
+                long size;
                 try {
                     size = Files.size(path);
                 } catch (IOException e) {
@@ -143,14 +164,7 @@ public class FTPServer {
                         while (fileChannel.position() != fileChannel.size()) {
                             fileChannel.read(fileBuffer);
                             fileBuffer.flip();
-                            while (fileBuffer.remaining() != 0) {
-                                Future writing = socketChannel.write(fileBuffer);
-                                while (!writing.isDone()) {
-                                    try {
-                                        writing.get();
-                                    } catch (InterruptedException | ExecutionException e) {}
-                                }
-                            }
+                            writeBufferToSocket(fileBuffer);
                             fileBuffer.clear();
                         }
                     } catch (IOException e) {
@@ -197,14 +211,7 @@ public class FTPServer {
                 }
             }
             responseBuffer.flip();
-            while (responseBuffer.remaining() != 0) {
-                Future writing = socketChannel.write(responseBuffer);
-                while (!writing.isDone()) {
-                    try {
-                        writing.get();
-                    } catch (InterruptedException | ExecutionException e) {}
-                }
-            }
+            writeBufferToSocket(responseBuffer);
         }
 
         private void fillBufferFromSocket(ByteBuffer buffer) {
@@ -219,6 +226,20 @@ public class FTPServer {
                 }
             }
             buffer.flip();
+        }
+
+        private void writeBufferToSocket(ByteBuffer buffer) {
+            while (buffer.remaining() != 0) {
+                Future writing = socketChannel.write(buffer);
+                while (!writing.isDone()) {
+                    try {
+                        writing.get();
+                    } catch (InterruptedException | ExecutionException e) {
+                        close();
+                        return;
+                    }
+                }
+            }
         }
 
         private class DirEntry {

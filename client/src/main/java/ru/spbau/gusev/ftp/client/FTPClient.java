@@ -13,6 +13,9 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * A very small file sharing client.
+ */
 public class FTPClient {
     private SocketChannel socketChannel;
     private final static int COMMAND_CODE_GET = 1;
@@ -22,15 +25,30 @@ public class FTPClient {
             MAX_PATH_LEN * Character.BYTES;
     private final static int FILE_BUFFER_SIZE = 1 << 12;
 
+    /**
+     * Connects to a file server.
+     * @param address the address of the server.
+     * @param port the port of the server.
+     * @throws IOException if connection is impossible.
+     */
     public void connect(String address, int port) throws IOException {
         socketChannel = SocketChannel.open(new InetSocketAddress(address, port));
     }
 
+    /**
+     * Cuts a connection with a server.
+     * @throws IOException if disconnection is impossible.
+     */
     public void disconnect() throws IOException {
         socketChannel.close();
         socketChannel = null;
     }
 
+    /**
+     * Executes a get request - downloads a file with the given path.
+     * @param path the path to the file to download.
+     * @throws IOException if a downloading error happens.
+     */
     public void executeGet(String path) throws IOException {
         ByteBuffer requestMessageBuffer = ByteBuffer.allocate(MAX_REQUEST_SIZE);
         requestMessageBuffer.putInt(COMMAND_CODE_GET);
@@ -64,6 +82,12 @@ public class FTPClient {
         }
     }
 
+    /**
+     * Executes a list request, listing the given folder.
+     * @param path the path to the folder to list
+     * @return a List with DirEntry objects for all the directory entries.
+     * @throws IOException if an error happens.
+     */
     public List<DirEntry> executeList(String path) throws IOException {
         ByteBuffer requestMessageBuffer = ByteBuffer.allocate(MAX_REQUEST_SIZE);
         requestMessageBuffer.putInt(COMMAND_CODE_LIST);
