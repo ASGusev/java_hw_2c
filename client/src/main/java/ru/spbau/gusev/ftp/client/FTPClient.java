@@ -27,8 +27,6 @@ public class FTPClient {
     }
 
     public void disconnect() throws IOException {
-        socketChannel.shutdownInput();
-        socketChannel.shutdownOutput();
         socketChannel.close();
         socketChannel = null;
     }
@@ -36,15 +34,14 @@ public class FTPClient {
     public void executeGet(String path) throws IOException {
         ByteBuffer requestMessageBuffer = ByteBuffer.allocate(MAX_REQUEST_SIZE);
         requestMessageBuffer.putInt(COMMAND_CODE_GET);
-        requestMessageBuffer.putInt(path.length());
-        for (char c: path.toCharArray()) {
-            requestMessageBuffer.putChar(c);
-        }
+        writeStringToBuffer(path, requestMessageBuffer);
         requestMessageBuffer.flip();
         socketChannel.write(requestMessageBuffer);
 
         ByteBuffer sizeBuffer = ByteBuffer.allocate(Long.BYTES);
-        socketChannel.read(sizeBuffer);
+        while (sizeBuffer.hasRemaining()) {
+            socketChannel.read(sizeBuffer);
+        }
         sizeBuffer.flip();
         long fileSize = sizeBuffer.getLong();
 
@@ -70,10 +67,7 @@ public class FTPClient {
     public List<DirEntry> executeList(String path) throws IOException {
         ByteBuffer requestMessageBuffer = ByteBuffer.allocate(MAX_REQUEST_SIZE);
         requestMessageBuffer.putInt(COMMAND_CODE_LIST);
-        requestMessageBuffer.putInt(path.length());
-        for (char c: path.toCharArray()) {
-            requestMessageBuffer.putChar(c);
-        }
+        writeStringToBuffer(path, requestMessageBuffer);
         requestMessageBuffer.flip();
         socketChannel.write(requestMessageBuffer);
 
@@ -101,10 +95,10 @@ public class FTPClient {
     }
 
     public static class DirEntry {
-        private String path;
-        private boolean dir;
+        private final String path;
+        private final boolean dir;
 
-        DirEntry(String path, boolean dir) {
+        private DirEntry(String path, boolean dir) {
             this.path = path;
             this.dir = dir;
         }
@@ -145,6 +139,13 @@ public class FTPClient {
                 symbols[i] = contentBuffer.getChar();
             }
             return String.valueOf(symbols);
+        }
+    }
+
+    protected static void writeStringToBuffer(String str, ByteBuffer buffer) {
+        buffer.putInt(str.length());
+        for (char c: str.toCharArray()) {
+            buffer.putChar(c);
         }
     }
 }
