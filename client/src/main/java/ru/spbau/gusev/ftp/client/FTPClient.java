@@ -12,6 +12,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
+import javax.annotation.Nonnull;
 
 /**
  * A very small file sharing client.
@@ -31,7 +32,7 @@ public class FTPClient {
      * @param port the port of the server.
      * @throws IOException if connection is impossible.
      */
-    public void connect(String address, int port) throws IOException {
+    public void connect(@Nonnull String address, int port) throws IOException {
         socketChannel = SocketChannel.open(new InetSocketAddress(address, port));
     }
 
@@ -49,7 +50,7 @@ public class FTPClient {
      * @param path the path to the file to download.
      * @throws IOException if a downloading error happens.
      */
-    public void executeGet(String path) throws IOException {
+    public void executeGet(@Nonnull String path) throws IOException {
         ByteBuffer requestMessageBuffer = ByteBuffer.allocate(MAX_REQUEST_SIZE);
         requestMessageBuffer.putInt(COMMAND_CODE_GET);
         writeStringToBuffer(path, requestMessageBuffer);
@@ -70,6 +71,9 @@ public class FTPClient {
         long written = 0;
         ByteBuffer fileBuffer = ByteBuffer.allocate(FILE_BUFFER_SIZE);
         Path targetPath = Paths.get(path);
+        if (targetPath.getNameCount() > 1) {
+            targetPath = targetPath.getParent().relativize(targetPath);
+        }
         FileChannel fileChannel = FileChannel.open(targetPath,
                 StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
         while (written != fileSize) {
@@ -88,7 +92,8 @@ public class FTPClient {
      * @return a List with DirEntry objects for all the directory entries.
      * @throws IOException if an error happens.
      */
-    public List<DirEntry> executeList(String path) throws IOException {
+    @Nonnull
+    public List<DirEntry> executeList(@Nonnull String path) throws IOException {
         ByteBuffer requestMessageBuffer = ByteBuffer.allocate(MAX_REQUEST_SIZE);
         requestMessageBuffer.putInt(COMMAND_CODE_LIST);
         writeStringToBuffer(path, requestMessageBuffer);
@@ -118,15 +123,19 @@ public class FTPClient {
         return content;
     }
 
+    /**
+     * A class representing a folder entry on the server.
+     */
     public static class DirEntry {
         private final String path;
         private final boolean dir;
 
-        private DirEntry(String path, boolean dir) {
+        private DirEntry(@Nonnull String path, boolean dir) {
             this.path = path;
             this.dir = dir;
         }
 
+        @Nonnull
         public String getPath() {
             return path;
         }
@@ -166,7 +175,8 @@ public class FTPClient {
         }
     }
 
-    protected static void writeStringToBuffer(String str, ByteBuffer buffer) {
+    protected static void writeStringToBuffer(@Nonnull String str,
+                                              @Nonnull ByteBuffer buffer) {
         buffer.putInt(str.length());
         for (char c: str.toCharArray()) {
             buffer.putChar(c);

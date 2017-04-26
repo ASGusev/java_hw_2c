@@ -1,5 +1,6 @@
 package ru.spbau.gusev.ftp.server;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -86,7 +87,7 @@ public class FTPServer {
         private final AsynchronousSocketChannel socketChannel;
         private final ByteBuffer requestBuffer;
 
-        ClientConnection(AsynchronousSocketChannel socketChannel) {
+        private ClientConnection(@Nonnull AsynchronousSocketChannel socketChannel) {
             this.socketChannel = socketChannel;
             requestBuffer = ByteBuffer.allocate(Integer.BYTES);
         }
@@ -145,7 +146,7 @@ public class FTPServer {
             } catch (IOException e) {}
         }
 
-        private void processRequestGet(Path path) {
+        private void processRequestGet(@Nonnull Path path) {
             ByteBuffer sizeBuffer = ByteBuffer.allocate(Long.BYTES);
             if (Files.isRegularFile(path)) {
                 long size;
@@ -178,7 +179,7 @@ public class FTPServer {
             }
         }
 
-        private void processRequestList(Path path) {
+        private void processRequestList(@Nonnull Path path) {
             List<DirEntry> entries = Collections.emptyList();
             if (Files.isDirectory(path)) {
                 try {
@@ -214,7 +215,7 @@ public class FTPServer {
             writeBufferToSocket(responseBuffer);
         }
 
-        private void fillBufferFromSocket(ByteBuffer buffer) {
+        private void fillBufferFromSocket(@Nonnull ByteBuffer buffer) {
             while (buffer.hasRemaining()) {
                 Future reading = socketChannel.read(buffer);
                 try {
@@ -228,7 +229,7 @@ public class FTPServer {
             buffer.flip();
         }
 
-        private void writeBufferToSocket(ByteBuffer buffer) {
+        private void writeBufferToSocket(@Nonnull ByteBuffer buffer) {
             while (buffer.remaining() != 0) {
                 Future writing = socketChannel.write(buffer);
                 while (!writing.isDone()) {
@@ -246,16 +247,16 @@ public class FTPServer {
             private final String path;
             private final boolean isDir;
 
-            private DirEntry(Path path) {
+            private DirEntry(@Nonnull Path path) {
                 this.path = path.toString();
                 isDir = Files.isDirectory(path);
             }
 
-            public String getPath() {
+            public @Nonnull String getPath() {
                 return path;
             }
 
-            public boolean isDir() {
+            public @Nonnull boolean isDir() {
                 return isDir;
             }
         }
