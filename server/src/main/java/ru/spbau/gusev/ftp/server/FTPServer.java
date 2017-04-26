@@ -58,7 +58,6 @@ public class FTPServer {
             };
 
     private class ClientConnection implements CompletionHandler<Integer, Object> {
-        private final static int MAX_PATH_LENGTH = 2048;
         private final static int FILE_BUFFER_SIZE = 1 << 12;
         private final static int REQUEST_TYPE_GET = 1;
         private final static int REQUEST_TYPE_LIST = 2;
@@ -68,8 +67,7 @@ public class FTPServer {
 
         ClientConnection(AsynchronousSocketChannel socketChannel) {
             this.socketChannel = socketChannel;
-            requestBuffer = ByteBuffer.allocate(Integer.BYTES +
-                    MAX_PATH_LENGTH * Character.BYTES);
+            requestBuffer = ByteBuffer.allocate(Integer.BYTES);
         }
 
         private void startListening() {
@@ -86,12 +84,18 @@ public class FTPServer {
                 return;
             }
 
-            requestBuffer.flip();
+            fillBufferFromSocket(requestBuffer);
             int requestType = requestBuffer.getInt();
-            int pathLen = requestBuffer.getInt();
+
+            ByteBuffer lenBuffer = ByteBuffer.allocate(Integer.BYTES);
+            fillBufferFromSocket(lenBuffer);
+            int pathLen = lenBuffer.getInt();
+
             char[] pathSymbols = new char[pathLen];
+            ByteBuffer pathBuffer = ByteBuffer.allocate(pathLen * Character.BYTES);
+            fillBufferFromSocket(pathBuffer);
             for (int i = 0; i < pathLen; i++) {
-                pathSymbols[i] = requestBuffer.getChar();
+                pathSymbols[i] = pathBuffer.getChar();
             }
             Path path = Paths.get(String.valueOf(pathSymbols));
 
@@ -165,6 +169,7 @@ public class FTPServer {
             if (Files.isDirectory(path)) {
                 try {
                     entries = Files.list(path)
+                            .sorted()
                             .map(DirEntry::new)
                             .collect(Collectors.toList());
                 } catch (IOException e) {}
@@ -178,6 +183,7 @@ public class FTPServer {
             }
             ByteBuffer responseBuffer = ByteBuffer.allocate(responseSize);
             responseBuffer.putInt(listSize);
+            System.out.println(entries.toString());
             for (DirEntry entry: entries) {
                 String entryPath = entry.getPath();
                 responseBuffer.putInt(entryPath.length());
@@ -199,6 +205,20 @@ public class FTPServer {
                     } catch (InterruptedException | ExecutionException e) {}
                 }
             }
+        }
+
+        private void fillBufferFromSocket(ByteBuffer buffer) {
+            while (buffer.hasRemaining()) {
+                Future reading = socketChannel.read(buffer);
+                try {
+                    reading.get();
+                } catch (InterruptedException | ExecutionException e) {
+                    buffer.clear();
+                    startListening();
+                    return;
+                }
+            }
+            buffer.flip();
         }
 
         private class DirEntry {
