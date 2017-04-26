@@ -19,7 +19,7 @@ public class FTPClientTest {
     private final String REQUEST_PATH = "req_path";
 
     @Test
-    public void testGet() throws IOException {
+    public void testGet() throws IOException, InterruptedException {
         String fileContentString = "content";
 
         byte[] fileContentBytes = fileContentString.getBytes();
@@ -31,6 +31,8 @@ public class FTPClientTest {
 
         MockedServer serverMock = new MockedServer(serverResponse.array(), PORT);
         new Thread(serverMock).start();
+        Thread.sleep(100);
+
         FTPClient client = new FTPClient();
         client.connect(LOOP, PORT);
         client.executeGet(REQUEST_PATH);
@@ -45,23 +47,24 @@ public class FTPClientTest {
     }
 
     @Test
-    public void testList() throws IOException {
+    public void testList() throws IOException, InterruptedException {
         String fileName = "file";
         String dirName = "directory";
 
         int responseLength = Integer.BYTES;
         responseLength += 2 * (Integer.BYTES + 1);
         responseLength += (fileName.length() + dirName.length()) * Character.BYTES;
-        ByteBuffer buffer = ByteBuffer.allocate(responseLength);
-        buffer.putInt(2);
-        FTPClient.writeStringToBuffer(fileName, buffer);
-        buffer.put((byte) 0);
-        FTPClient.writeStringToBuffer(dirName, buffer);
-        buffer.put((byte) 1);
-        buffer.flip();
+        ByteBuffer serverResponse = ByteBuffer.allocate(responseLength);
+        serverResponse.putInt(2);
+        FTPClient.writeStringToBuffer(fileName, serverResponse);
+        serverResponse.put((byte) 0);
+        FTPClient.writeStringToBuffer(dirName, serverResponse);
+        serverResponse.put((byte) 1);
+        serverResponse.flip();
 
-        MockedServer mockedServer = new MockedServer(buffer.array(), PORT);
+        MockedServer mockedServer = new MockedServer(serverResponse.array(), PORT);
         new Thread(mockedServer).start();
+        Thread.sleep(100);
 
         FTPClient client = new FTPClient();
         client.connect(LOOP, PORT);
@@ -102,7 +105,6 @@ public class FTPClientTest {
                 ServerSocket serverSocket = new ServerSocket(port);
                 Socket socket = serverSocket.accept();
                 DataInputStream dataIn = new DataInputStream(socket.getInputStream());
-                OutputStream out = socket.getOutputStream();
 
                 requestCode = dataIn.readInt();
                 StringBuilder pathBuilder = new StringBuilder();
@@ -111,10 +113,11 @@ public class FTPClientTest {
                     pathBuilder.append(dataIn.readChar());
                 }
                 requestPath = pathBuilder.toString();
-
+                OutputStream out = socket.getOutputStream();
                 out.write(response);
                 out.flush();
                 out.close();
+
                 dataIn.close();
                 socket.close();
                 serverSocket.close();
