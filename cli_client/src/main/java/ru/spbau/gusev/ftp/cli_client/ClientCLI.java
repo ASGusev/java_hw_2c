@@ -1,8 +1,9 @@
-package ru.spbau.gusev.ftp.client;
+package ru.spbau.gusev.ftp.cli_client;
 
 import java.io.IOException;
 import java.nio.file.NoSuchFileException;
 import java.util.List;
+import ru.spbau.gusev.ftp.client.FTPClient;
 
 public class ClientCLI {
     private final static String DIR_TYPE = "dir";

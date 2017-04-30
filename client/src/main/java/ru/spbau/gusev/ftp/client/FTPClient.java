@@ -84,6 +84,7 @@ public class FTPClient {
             }
             fileBuffer.clear();
         }
+        fileChannel.close();
     }
 
     /**
@@ -130,7 +131,7 @@ public class FTPClient {
         private final String path;
         private final boolean dir;
 
-        private DirEntry(@Nonnull String path, boolean dir) {
+        public DirEntry(@Nonnull String path, boolean dir) {
             this.path = path;
             this.dir = dir;
         }

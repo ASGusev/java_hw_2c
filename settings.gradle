@@ -1,2 +1,3 @@
 rootProject.name = 'FTP'
-include 'client', 'server'
+include 'client', 'server', 'gui_client', 'cli_client'
+
