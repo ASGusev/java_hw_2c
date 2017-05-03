@@ -13,6 +13,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * A very small file sharing client.
@@ -25,6 +26,25 @@ public class FTPClient {
     private final static int MAX_REQUEST_SIZE = Integer.BYTES +
             MAX_PATH_LEN * Character.BYTES;
     private final static int FILE_BUFFER_SIZE = 1 << 12;
+    private String address;
+    private int port;
+
+    /**
+     * Gets the address of the connected server.
+     * @return the address used to connect.
+     */
+    @Nullable
+    public String getAddress() {
+        return address;
+    }
+
+    /**
+     * Gets the port of the connected server.
+     * @return the port used to connect.
+     */
+    public int getPort() {
+        return port;
+    }
 
     /**
      * Connects to a file server.
@@ -33,6 +53,8 @@ public class FTPClient {
      * @throws IOException if connection is impossible.
      */
     public void connect(@Nonnull String address, int port) throws IOException {
+        this.address = address;
+        this.port = port;
         socketChannel = SocketChannel.open(new InetSocketAddress(address, port));
     }
 

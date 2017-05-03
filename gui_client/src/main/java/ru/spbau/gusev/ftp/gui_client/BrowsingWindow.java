@@ -23,6 +23,9 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Stack;
 
+/**
+ * A window with an interface for browsing a server.
+ */
 public class BrowsingWindow {
     private final static int BROWSING_WINDOW_HEIGHT = 640;
     private final static int BROWSING_WINDOW_WIDTH = 360;
@@ -33,25 +36,28 @@ public class BrowsingWindow {
     private final Stage window;
     private Scene browsingScene;
     private FTPClient browsingClient;
-    private String address;
-    private int port;
     private Stack<String> positions;
     private ObservableList<String> dirEntriesObservable;
     private List<FTPClient.DirEntry> dirEntries;
     private SelectionModel listSelectionModel;
     private Text positionText;
 
-    public BrowsingWindow(@Nonnull FTPClient client, @Nonnull String address,
-                          int port) {
+    /**
+     * Creates an instance with a given FTPClient object.
+     * @param client the client to use.
+     */
+    public BrowsingWindow(@Nonnull FTPClient client) {
         browsingClient = client;
-        this.address = address;
-        this.port = port;
         window = new Stage();
-        window.setTitle(String.format(BROWSING_WINDOW_TITLE, address, port));
+        window.setTitle(String.format(BROWSING_WINDOW_TITLE, client.getAddress(),
+                client.getPort()));
         makeBrowsingScene();
         window.setScene(browsingScene);
     }
 
+    /**
+     * Shows the window to the user.
+     */
     public void show() {
         window.show();
     }
@@ -123,7 +129,12 @@ public class BrowsingWindow {
         } else {
             try {
                 FTPClient downloadingClient = new FTPClient();
-                downloadingClient.connect(address, port);
+                if (browsingClient.getAddress() != null) {
+                    downloadingClient.connect(browsingClient.getAddress(),
+                            browsingClient.getPort());
+                } else {
+                    //TODO: error
+                }
 
                 new Thread(() -> {
                     try {

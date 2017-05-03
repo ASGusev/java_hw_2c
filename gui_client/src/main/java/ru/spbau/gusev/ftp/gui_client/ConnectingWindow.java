@@ -15,6 +15,9 @@ import ru.spbau.gusev.ftp.client.FTPClient;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 
+/**
+ * A window that allows user to connect ot a server.
+ */
 public class ConnectingWindow {
     private final static String CONNECT_TITLE = "GUI client - connect";
     private final static int CONNECTION_WINDOW_HEIGHT = 240;
@@ -27,6 +30,10 @@ public class ConnectingWindow {
     private Scene connectScene;
     private Scene errorScene;
 
+    /**
+     * Creates an instance in the given stage.
+     * @param window the window to use.
+     */
     public ConnectingWindow(@Nonnull Stage window) {
         this.window = window;
         makeConnectScene();
@@ -35,6 +42,9 @@ public class ConnectingWindow {
         window.setScene(connectScene);
     }
 
+    /**
+     * Shows the window on the screen.
+     */
     public void show() {
         window.show();
     }
@@ -88,7 +98,7 @@ public class ConnectingWindow {
             String address = serverField.getText();
             int port = Integer.valueOf(portField.getText());
             client.connect(address, port);
-            BrowsingWindow browsingWindow = new BrowsingWindow(client, address, port);
+            BrowsingWindow browsingWindow = new BrowsingWindow(client);
             browsingWindow.show();
             window.hide();
         } catch (IOException | NumberFormatException e) {
