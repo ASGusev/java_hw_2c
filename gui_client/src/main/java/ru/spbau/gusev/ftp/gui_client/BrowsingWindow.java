@@ -1,5 +1,6 @@
 package ru.spbau.gusev.ftp.gui_client;
 
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
@@ -32,6 +33,14 @@ public class BrowsingWindow {
     private final static String BROWSING_WINDOW_TITLE = "GUI Client - browse %s:%d";
     private final static String PARENT_FOLDER = "..";
     private static final String ROOT_PATH = "";
+    private static final String GET_ERROR_TITLE = "Error";
+    private static final String GET_ERROR_MESSAGE = "Impossible to download file.";
+    private static final String LIST_ERROR_TITLE = "Error";
+    private static final String LIST_ERROR_MESSAGE =
+            "Impossible to load folder content.";
+    private static final String DOWNLOAD_FINISH_TITLE = "Download finished.";
+    private static final String DOWNLOAD_FINISH_MESSAGE =
+            "File %s successfully downloaded.";
 
     private final Stage window;
     private Scene browsingScene;
@@ -113,7 +122,7 @@ public class BrowsingWindow {
                 dirEntriesObservable.add(entryName);
             });
         } catch (IOException e) {
-            e.printStackTrace();
+            new Notification(LIST_ERROR_TITLE, LIST_ERROR_MESSAGE).show();
         }
     }
 
@@ -133,18 +142,25 @@ public class BrowsingWindow {
                     downloadingClient.connect(browsingClient.getAddress(),
                             browsingClient.getPort());
                 } else {
-                    //TODO: error
+                    new Notification(GET_ERROR_TITLE, GET_ERROR_MESSAGE).show();
                 }
 
                 new Thread(() -> {
                     try {
                         downloadingClient.executeGet(entry.getPath());
+                        Platform.runLater(() ->
+                                new Notification(DOWNLOAD_FINISH_TITLE,
+                                        String.format(DOWNLOAD_FINISH_MESSAGE,
+                                                entry.getPath())).show());
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        Platform.runLater(() ->
+                                new Notification(GET_ERROR_TITLE,
+                                        GET_ERROR_MESSAGE + e.getMessage())
+                                        .show());
                     }
                 }).start();
             } catch (IOException e) {
-                e.printStackTrace();
+                new Notification(GET_ERROR_TITLE, GET_ERROR_MESSAGE).show();
             }
         }
     };
