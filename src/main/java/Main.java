@@ -11,7 +11,7 @@ public class Main {
         } else {
             try {
                 requestedCommand = Command.valueOf(args[0]);
-            } catch (EnumConstantNotPresentException e) {
+            } catch (EnumConstantNotPresentException | IllegalArgumentException e) {
                 requestedCommand = Command.help;
             }
         }
@@ -349,7 +349,23 @@ public class Main {
             @Override
             protected String getDesc() {
                 return "branch create <name> - creates a branch with provided name\n" +
-                        "branch delete <name> - deletes specified branch\n";
+                        "branch delete <name> - deletes specified branch";
+            }
+        },
+
+        clean {
+            @Override
+            protected void exec(String[] args) {
+                try {
+                    VCS.clean();
+                } catch (VCS.BadRepoException e) {
+                    System.out.println("Incorrect repo: " + e.getMessage());
+                }
+            }
+
+            @Override
+            protected String getDesc() {
+                return "clean - removes all untracked files";
             }
         };
 

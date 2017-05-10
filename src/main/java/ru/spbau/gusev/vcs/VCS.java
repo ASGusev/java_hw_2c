@@ -124,6 +124,7 @@ public class VCS {
         Branch newBranch = Branch.getByName(branchName);
         try {
             Repository.checkoutCommit(newBranch.getHeadNumber());
+            Repository.setCurrentBranch(newBranch);
         } catch (NoSuchCommitException e) {
             throw new BadRepoException("Branch's head commit not found.");
         }
@@ -208,7 +209,7 @@ public class VCS {
         return Repository.getWorkingDirectory().getFiles()
                 .filter(file -> {
                     HashedFile stagedFile = stagingZone.getHashedFile(file.getName());
-                    return !file.equals(stagedFile);
+                    return stagedFile != null && !file.equals(stagedFile);
                 })
                 .map(HashedFile::toString)
                 .collect(Collectors.toList());
