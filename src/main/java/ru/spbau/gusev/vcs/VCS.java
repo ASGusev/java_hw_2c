@@ -1,6 +1,7 @@
 package ru.spbau.gusev.vcs;
 
 import javax.annotation.Nonnull;
+import java.io.IOException;
 import java.nio.file.*;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -246,6 +247,15 @@ public class VCS {
     @Nonnull
     public static String getCurBranch() throws BadRepoException {
         return Repository.getCurBranch().getName();
+    }
+
+    /**
+     * Gets a list of all existing branch names.
+     * @return a list containing names of all branches.
+     */
+    @Nonnull
+    public static List<String> getBranchNames() {
+        return Repository.getBranchNames();
     }
 
     /**

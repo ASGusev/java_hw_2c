@@ -351,4 +351,20 @@ public abstract class Repository {
         }
         return commitStorage;
     }
+
+    /**
+     * Gets a list of all existing branch names.
+     * @return a list containing names of all branches.
+     */
+    @Nonnull
+    protected static List<String> getBranchNames() {
+        try {
+            return Files.list(Paths.get(REPO_DIR_NAME, BRANCHES_DIR_NAME))
+                    .map(path -> path.getName(path.getNameCount() - 1))
+                    .map(Object::toString)
+                    .collect(Collectors.toList());
+        } catch (IOException e) {
+            throw new VCS.FileSystemError(e.getMessage());
+        }
+    }
 }

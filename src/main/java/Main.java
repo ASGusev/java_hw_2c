@@ -307,11 +307,13 @@ public class Main {
         branch {
             @Override
             protected void exec(String[] args) {
-                if (args.length == 3) {
+                if (args.length > 1) {
                     switch (args[1]) {
                         case "create": {
                             try {
-                                VCS.createBranch(args[2]);
+                                if (args.length > 2) {
+                                    VCS.createBranch(args[2]);
+                                }
                             } catch (VCS.BadRepoException e) {
                                 System.out.println("Incorrect repo");
                             } catch (VCS.BranchAlreadyExistsException e) {
@@ -325,7 +327,9 @@ public class Main {
                                 System.out.println("Branch master cannot be deleted.");
                             } else {
                                 try {
-                                    VCS.deleteBranch(args[2]);
+                                    if (args.length > 2) {
+                                        VCS.deleteBranch(args[2]);
+                                    }
                                 } catch (VCS.BadRepoException e) {
                                     System.out.println("Incorrect repo: " +
                                             e.getMessage());
@@ -336,6 +340,22 @@ public class Main {
                                     System.out.println("Current branch cannot be" +
                                             " deleted.");
                                 }
+                            }
+                            break;
+                        }
+                        case "list": {
+                            try {
+                                String currentBranch = VCS.getCurBranch();
+                                VCS.getBranchNames().forEach(branchName -> {
+                                    if (branchName.equals(currentBranch)) {
+                                        System.out.println("* " + branchName);
+                                    } else {
+                                        System.out.println("  " + branchName);
+                                    }
+                                });
+                            } catch (VCS.BadRepoException e) {
+                                System.out.println("Incorrect repo: " +
+                                        e.getMessage());
                             }
                             break;
                         }
