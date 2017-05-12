@@ -2,6 +2,7 @@ package ru.spbau.gusev.ftp.client;
 
 import org.junit.Assert;
 import org.junit.Test;
+import ru.spbau.gusev.ftp.utils.Utils;
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -56,9 +57,9 @@ public class FTPClientTest {
         responseLength += (fileName.length() + dirName.length()) * Character.BYTES;
         ByteBuffer serverResponse = ByteBuffer.allocate(responseLength);
         serverResponse.putInt(2);
-        FTPClient.writeStringToBuffer(fileName, serverResponse);
+        Utils.writeStringToBuffer(fileName, serverResponse);
         serverResponse.put((byte) 0);
-        FTPClient.writeStringToBuffer(dirName, serverResponse);
+        Utils.writeStringToBuffer(dirName, serverResponse);
         serverResponse.put((byte) 1);
         serverResponse.flip();
 

@@ -20,6 +20,7 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import ru.spbau.gusev.ftp.protocol.Protocol;
+import ru.spbau.gusev.ftp.utils.Utils;
 
 /**
  * A simple file server.
@@ -33,7 +34,7 @@ public class FTPServer {
      * Creates a server for the specified port.
      * @param port the port for the server.
      */
-    FTPServer(int port) {
+    public FTPServer(int port) {
         this.port = port;
         clients = new HashSet<>();
     }
@@ -104,16 +105,23 @@ public class FTPServer {
                 return;
             }
 
-            fillBufferFromSocket(requestBuffer);
-            int requestType = requestBuffer.getInt();
-
             ByteBuffer lenBuffer = ByteBuffer.allocate(Integer.BYTES);
-            fillBufferFromSocket(lenBuffer);
+            try {
+                fillBufferFromSocket(requestBuffer);
+                fillBufferFromSocket(lenBuffer);
+            } catch (ReadingError readingError) {
+                return;
+            }
+            int requestType = requestBuffer.getInt();
             int pathLen = lenBuffer.getInt();
 
             char[] pathSymbols = new char[pathLen];
             ByteBuffer pathBuffer = ByteBuffer.allocate(pathLen * Character.BYTES);
-            fillBufferFromSocket(pathBuffer);
+            try {
+                fillBufferFromSocket(pathBuffer);
+            } catch (ReadingError readingError) {
+                return;
+            }
             for (int i = 0; i < pathLen; i++) {
                 pathSymbols[i] = pathBuffer.getChar();
             }
@@ -199,11 +207,7 @@ public class FTPServer {
             ByteBuffer responseBuffer = ByteBuffer.allocate(responseSize);
             responseBuffer.putInt(listSize);
             for (DirEntry entry: entries) {
-                String entryPath = entry.getPath();
-                responseBuffer.putInt(entryPath.length());
-                for (char c: entryPath.toCharArray()) {
-                    responseBuffer.putChar(c);
-                }
+                Utils.writeStringToBuffer(entry.getPath(), responseBuffer);
                 if (entry.isDir()) {
                     responseBuffer.put((byte)1);
                 } else {
@@ -214,7 +218,8 @@ public class FTPServer {
             writeBufferToSocket(responseBuffer);
         }
 
-        private void fillBufferFromSocket(@Nonnull ByteBuffer buffer) {
+        private void fillBufferFromSocket(@Nonnull ByteBuffer buffer)
+                throws ReadingError {
             while (buffer.hasRemaining()) {
                 Future reading = socketChannel.read(buffer);
                 try {
@@ -222,7 +227,7 @@ public class FTPServer {
                 } catch (InterruptedException | ExecutionException e) {
                     buffer.clear();
                     startListening();
-                    return;
+                    throw new ReadingError();
                 }
             }
             buffer.flip();
@@ -242,6 +247,8 @@ public class FTPServer {
             }
         }
 
+        private class ReadingError extends Exception {}
+
         private class DirEntry {
             private final String path;
             private final boolean isDir;
@@ -251,11 +258,11 @@ public class FTPServer {
                 isDir = Files.isDirectory(path);
             }
 
-            public @Nonnull String getPath() {
+            private  @Nonnull String getPath() {
                 return path;
             }
 
-            public @Nonnull boolean isDir() {
+            private boolean isDir() {
                 return isDir;
             }
         }

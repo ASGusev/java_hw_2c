@@ -9,4 +9,9 @@ jar {
                 'Main-class': 'ru.spbau.gusev.ftp.server.ServerCLI'
         )
     }
+    from {
+        configurations.compile.collect {
+            it.isDirectory() ? it : zipTree(it)
+        }
+    }
 }

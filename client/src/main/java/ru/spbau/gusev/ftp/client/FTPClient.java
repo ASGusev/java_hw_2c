@@ -1,6 +1,7 @@
 package ru.spbau.gusev.ftp.client;
 
 import ru.spbau.gusev.ftp.protocol.Protocol;
+import ru.spbau.gusev.ftp.utils.Utils;
 
 import java.io.*;
 import java.net.InetSocketAddress;
@@ -75,7 +76,7 @@ public class FTPClient {
     public void executeGet(@Nonnull String path) throws IOException {
         ByteBuffer requestMessageBuffer = ByteBuffer.allocate(MAX_REQUEST_SIZE);
         requestMessageBuffer.putInt(Protocol.REQUEST_TYPE_GET);
-        writeStringToBuffer(path, requestMessageBuffer);
+        Utils.writeStringToBuffer(path, requestMessageBuffer);
         requestMessageBuffer.flip();
         socketChannel.write(requestMessageBuffer);
 
@@ -119,7 +120,7 @@ public class FTPClient {
     public List<DirEntry> executeList(@Nonnull String path) throws IOException {
         ByteBuffer requestMessageBuffer = ByteBuffer.allocate(MAX_REQUEST_SIZE);
         requestMessageBuffer.putInt(Protocol.REQUEST_TYPE_LIST);
-        writeStringToBuffer(path, requestMessageBuffer);
+        Utils.writeStringToBuffer(path, requestMessageBuffer);
         requestMessageBuffer.flip();
         socketChannel.write(requestMessageBuffer);
 
@@ -195,14 +196,6 @@ public class FTPClient {
                 symbols[i] = contentBuffer.getChar();
             }
             return String.valueOf(symbols);
-        }
-    }
-
-    protected static void writeStringToBuffer(@Nonnull String str,
-                                              @Nonnull ByteBuffer buffer) {
-        buffer.putInt(str.length());
-        for (char c: str.toCharArray()) {
-            buffer.putChar(c);
         }
     }
 }
