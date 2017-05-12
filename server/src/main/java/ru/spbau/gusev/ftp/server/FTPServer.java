@@ -19,6 +19,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
+import ru.spbau.gusev.ftp.protocol.Protocol;
+
 /**
  * A simple file server.
  */
@@ -81,8 +83,6 @@ public class FTPServer {
      */
     private class ClientConnection implements CompletionHandler<Integer, Object> {
         private final static int FILE_BUFFER_SIZE = 1 << 12;
-        private final static int REQUEST_TYPE_GET = 1;
-        private final static int REQUEST_TYPE_LIST = 2;
 
         private final AsynchronousSocketChannel socketChannel;
         private final ByteBuffer requestBuffer;
@@ -99,9 +99,7 @@ public class FTPServer {
         @Override
         public void completed(Integer result, Object attachment) {
             if (result == -1) {
-                try{
-                    socketChannel.close();
-                } catch (IOException e) {}
+                close();
                 clients.remove(this);
                 return;
             }
@@ -122,11 +120,11 @@ public class FTPServer {
             Path path = Paths.get(String.valueOf(pathSymbols));
 
             switch (requestType) {
-                case REQUEST_TYPE_GET: {
+                case Protocol.REQUEST_TYPE_GET: {
                     processRequestGet(path);
                     break;
                 }
-                case REQUEST_TYPE_LIST: {
+                case Protocol.REQUEST_TYPE_LIST: {
                     processRequestList(path);
                     break;
                 }
@@ -143,7 +141,9 @@ public class FTPServer {
         private void close() {
             try {
                 socketChannel.close();
-            } catch (IOException e) {}
+            } catch (IOException e) {
+                throw new NetworkError(e);
+            }
         }
 
         private void processRequestGet(@Nonnull Path path) {
@@ -198,7 +198,6 @@ public class FTPServer {
             }
             ByteBuffer responseBuffer = ByteBuffer.allocate(responseSize);
             responseBuffer.putInt(listSize);
-            System.out.println(entries.toString());
             for (DirEntry entry: entries) {
                 String entryPath = entry.getPath();
                 responseBuffer.putInt(entryPath.length());
@@ -259,6 +258,12 @@ public class FTPServer {
             public @Nonnull boolean isDir() {
                 return isDir;
             }
+        }
+    }
+
+    public static class NetworkError extends Error {
+        private NetworkError(Throwable t) {
+            super(t);
         }
     }
 }

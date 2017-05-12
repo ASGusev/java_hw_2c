@@ -1,5 +1,7 @@
 package ru.spbau.gusev.ftp.client;
 
+import ru.spbau.gusev.ftp.protocol.Protocol;
+
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -20,8 +22,6 @@ import javax.annotation.Nullable;
  */
 public class FTPClient {
     private SocketChannel socketChannel;
-    private final static int COMMAND_CODE_GET = 1;
-    private final static int COMMAND_CODE_LIST = 2;
     private final static int MAX_PATH_LEN = 1 << 11;
     private final static int MAX_REQUEST_SIZE = Integer.BYTES +
             MAX_PATH_LEN * Character.BYTES;
@@ -74,7 +74,7 @@ public class FTPClient {
      */
     public void executeGet(@Nonnull String path) throws IOException {
         ByteBuffer requestMessageBuffer = ByteBuffer.allocate(MAX_REQUEST_SIZE);
-        requestMessageBuffer.putInt(COMMAND_CODE_GET);
+        requestMessageBuffer.putInt(Protocol.REQUEST_TYPE_GET);
         writeStringToBuffer(path, requestMessageBuffer);
         requestMessageBuffer.flip();
         socketChannel.write(requestMessageBuffer);
@@ -118,7 +118,7 @@ public class FTPClient {
     @Nonnull
     public List<DirEntry> executeList(@Nonnull String path) throws IOException {
         ByteBuffer requestMessageBuffer = ByteBuffer.allocate(MAX_REQUEST_SIZE);
-        requestMessageBuffer.putInt(COMMAND_CODE_LIST);
+        requestMessageBuffer.putInt(Protocol.REQUEST_TYPE_LIST);
         writeStringToBuffer(path, requestMessageBuffer);
         requestMessageBuffer.flip();
         socketChannel.write(requestMessageBuffer);
