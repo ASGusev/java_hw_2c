@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ru.spbau.xunit.runner.RunnerTest" tests="11" skipped="0" failures="0" errors="0" timestamp="2017-05-13T21:05:01" hostname="andy-HP" time="0.139">
+  <properties/>
+  <testcase name="timeTest" classname="ru.spbau.xunit.runner.RunnerTest" time="0.116"/>
+  <testcase name="expectationWrongException" classname="ru.spbau.xunit.runner.RunnerTest" time="0.002"/>
+  <testcase name="simpleSuccessTest" classname="ru.spbau.xunit.runner.RunnerTest" time="0.001"/>
+  <testcase name="expectationSuccessTest" classname="ru.spbau.xunit.runner.RunnerTest" time="0.002"/>
+  <testcase name="beforeClassTest" classname="ru.spbau.xunit.runner.RunnerTest" time="0.002"/>
+  <testcase name="afterClassTest" classname="ru.spbau.xunit.runner.RunnerTest" time="0.002"/>
+  <testcase name="beforeTest" classname="ru.spbau.xunit.runner.RunnerTest" time="0.004"/>
+  <testcase name="ignoreTest" classname="ru.spbau.xunit.runner.RunnerTest" time="0.004"/>
+  <testcase name="afterTest" classname="ru.spbau.xunit.runner.RunnerTest" time="0.002"/>
+  <testcase name="expectationNotThrownTest" classname="ru.spbau.xunit.runner.RunnerTest" time="0.001"/>
+  <testcase name="simpleFailureTest" classname="ru.spbau.xunit.runner.RunnerTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
