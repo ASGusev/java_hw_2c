@@ -113,6 +113,8 @@ public class Main {
                                 help.exec(args);
                             }
                         }
+                    } catch (NumberFormatException e) {
+                        System.out.println("Commit ID must be a number.");
                     } catch (VCS.BadRepoException e) {
                         System.out.println("Incorrect repo: " +
                                 e.getMessage());
