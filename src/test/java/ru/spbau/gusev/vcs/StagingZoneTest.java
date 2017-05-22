@@ -18,7 +18,7 @@ public class StagingZoneTest {
         final String FILE_CONTENT = "bar";
         final Path stageDir = Paths.get("stage_dir");
         final Path stageList = Paths.get("stage_list");
-        Path filePath = Paths.get(FILE_NAME);
+        final Path filePath = Paths.get(FILE_NAME);
 
         try {
             Files.write(filePath, FILE_CONTENT.getBytes());
@@ -70,7 +70,7 @@ public class StagingZoneTest {
         final String FILE_CONTENT = "bar";
         final Path stageDir = Paths.get("stage_dir");
         final Path stageList = Paths.get("stage_list");
-        Path filePath = stageDir.resolve(FILE_NAME);
+        final Path filePath = stageDir.resolve(FILE_NAME);
 
         try {
             Files.createDirectory(stageDir);
@@ -89,13 +89,14 @@ public class StagingZoneTest {
             HashedDirectory.deleteDir(stageDir);
         }
     }
-@Test
+
+    @Test
     public void containsTest() throws IOException, VCS.NoSuchFileException {
         final String FILE_NAME = "foo";
         final String FILE_CONTENT = "bar";
         final Path stageDir = Paths.get("stage_dir");
         final Path stageList = Paths.get("stage_list");
-        Path filePath = stageDir.resolve(FILE_NAME);
+        final Path filePath = stageDir.resolve(FILE_NAME);
 
         try {
             Files.createDirectory(stageDir);
@@ -118,8 +119,8 @@ public class StagingZoneTest {
         final String FILE_CONTENT = "bar";
         final Path stageDir = Paths.get("stage_dir");
         final Path stageList = Paths.get("stage_list");
-        Path stageFilePath = stageDir.resolve(FILE_NAME);
-        Path filePath = Paths.get(FILE_NAME);
+        final Path stageFilePath = stageDir.resolve(FILE_NAME);
+        final Path filePath = Paths.get(FILE_NAME);
 
         try {
             Files.createDirectory(stageDir);

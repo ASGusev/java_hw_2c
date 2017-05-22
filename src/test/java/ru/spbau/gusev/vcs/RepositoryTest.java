@@ -4,9 +4,12 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -42,55 +45,56 @@ public class RepositoryTest {
     @Test
     public void setUserTest() throws
             IOException, VCS.RepoAlreadyExistsException, VCS.BadRepoException {
-        try {
-            final String USERNAME_1 = "user1";
-            final String USERNAME_2 = "user2";
-            Repository.create(USERNAME_1);
-            Repository.setUserName(USERNAME_2);
+        try (RepoMock repo = new RepoMock()) {
+            final String CUSTOM_USERNAME = "user2";
+            Repository.setUserName(CUSTOM_USERNAME);
             Assert.assertEquals(Files.readAllLines(
                     Paths.get(Repository.REPO_DIR_NAME, Repository.USERNAME_FILE)),
-                    Collections.singletonList(USERNAME_2));
-        } finally {
-            HashedDirectory.deleteDir(Repository.REPO_DIR_NAME);
+                    Collections.singletonList(CUSTOM_USERNAME));
         }
     }
 
     @Test
     public void checkoutTest() throws VCS.RepoAlreadyExistsException, IOException,
             VCS.NoSuchFileException, VCS.BadPositionException, VCS.BadRepoException,
-            VCS.NoSuchCommitException {
+            VCS.NoSuchCommitException, NoSuchAlgorithmException {
         final String FILE_1 = "file1";
         final String FILE_2 = "file2";
-        Path path1 = Paths.get(FILE_1);
-        Path path2 = Paths.get(FILE_2);
+        final String CONTENT_1_1 = "1.1";
+        final String CONTENT_1_2 = "1.2";
+        final String CONTENT_2_1 = "2.1";
+        final Path path1 = Paths.get(FILE_1);
+        final Path path2 = Paths.get(FILE_2);
+        final Path storagePath = Paths.get(RepoMock.ROOT,
+                RepoMock.COMMITS_FILES);
 
-        try {
-            Repository.create("usr");
-            StagingZone stagingZone = Repository.getStagingZone();
-            WorkingDirectory workingDirectory = Repository.getWorkingDirectory();
+        try (RepoMock repo = new RepoMock()) {
+            MessageDigest digest = MessageDigest.getInstance("MD5");
+            String hash_1_1 = new BigInteger(
+                    digest.digest(CONTENT_1_1.getBytes())).toString();
+            String hash_1_2 = new BigInteger(
+                    digest.digest(CONTENT_1_2.getBytes())).toString();
+            String hash_2_1 = new BigInteger(
+                    digest.digest(CONTENT_2_1.getBytes())).toString();
 
-            Files.write(path1, "1.1".getBytes());
-            stagingZone.add(workingDirectory.getHashedFile(FILE_1));
-            Commit commit1 = new Commit(FILE_1);
+            Files.write(storagePath.resolve(hash_1_1), CONTENT_1_1.getBytes());
+            Files.write(storagePath.resolve(hash_1_2), CONTENT_1_2.getBytes());
+            Files.write(storagePath.resolve(hash_2_1), CONTENT_2_1.getBytes());
 
-            Files.write(path1, "1.2".getBytes());
-            Files.write(path2, "2.1".getBytes());
-            stagingZone.add(workingDirectory.getHashedFile(FILE_1));
-            stagingZone.add(workingDirectory.getHashedFile(FILE_2));
-            Commit commit2 = new Commit(FILE_2);
+            List<String> files1 = Collections.singletonList(FILE_1 + " " + hash_1_1);
+            List<String> files2 = Arrays.asList(FILE_1 + " " + hash_1_2,
+                    FILE_2 + " " + hash_2_1);
 
-            Repository.checkoutCommit(commit1.getNumber());
+            repo.commit(1, RepoMock.MASTER, files1, 0, "msg", 0);
+            repo.commit(2, RepoMock.MASTER, files2, 0, "msg", 2);
+
+            Repository.checkoutCommit(1);
             Assert.assertTrue(Files.notExists(path2));
             List<String> file1Content = Files.readAllLines(path1);
             Assert.assertEquals(Collections.singletonList("1.1"), file1Content);
         } finally {
-            HashedDirectory.deleteDir(Repository.REPO_DIR_NAME);
-            if (Files.exists(path1)) {
-                Files.delete(path1);
-            }
-            if (Files.exists(path2)) {
-                Files.delete(path2);
-            }
+            Files.deleteIfExists(path1);
+            Files.deleteIfExists(path2);
         }
     }
 }

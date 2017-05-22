@@ -14,13 +14,15 @@ import java.util.stream.Collectors;
  * A class representing a branch in the repository.
  */
 public class Branch {
+    private static final String REPO_DIR = ".vcs";
+    private static final String BRANCHES_DIR = "branches";
+
     private final String name;
     private final Path commitsListPath;
 
     private Branch(@Nonnull String name) throws VCS.NoSuchBranchException {
         this.name = name;
-        commitsListPath = Paths.get(Repository.REPO_DIR_NAME,
-                Repository.BRANCHES_DIR_NAME, name);
+        commitsListPath = Paths.get(REPO_DIR, BRANCHES_DIR, name);
         if (Files.notExists(commitsListPath)) {
             throw new VCS.NoSuchBranchException();
         }
@@ -35,14 +37,13 @@ public class Branch {
      * @throws VCS.BadRepoException if the repository folder is corrupt.
      */
     @Nonnull
-    protected static Branch create(@Nonnull String name) throws VCS.BranchAlreadyExistsException,
-            VCS.BadRepoException {
+    protected static Branch create(@Nonnull String name, Integer parentCommit)
+            throws VCS.BranchAlreadyExistsException, VCS.BadRepoException {
         if (name.isEmpty()) {
             throw new IllegalArgumentException("Empty branch name.");
         }
 
-        Path descPath = Paths.get(Repository.REPO_DIR_NAME,
-                Repository.BRANCHES_DIR_NAME, name);
+        Path descPath = Paths.get(REPO_DIR, BRANCHES_DIR, name);
         if (Files.exists(descPath)) {
             throw new VCS.BranchAlreadyExistsException();
         }
@@ -50,15 +51,13 @@ public class Branch {
             throw new VCS.BadRepoException("Branches folder not found.");
         }
         try {
-            Files.write(descPath, (Repository.getCurrentCommitNumber().toString()
+            Files.write(descPath, (parentCommit.toString()
                     + '\n').getBytes());
         } catch (IOException e) {
             throw new VCS.FileSystemError("Branch description creation error.");
         }
         try {
-            Branch newBranch = new Branch(name);
-            Repository.setCurrentBranch(newBranch);
-            return newBranch;
+            return new Branch(name);
         } catch (VCS.NoSuchBranchException e) {
             throw new VCS.BadRepoException("Branch creation failed.");
         }
@@ -166,13 +165,6 @@ public class Branch {
      * @throws IllegalArgumentException in case of attempt to delete the master branch.
      */
     void delete() throws VCS.BadRepoException, VCS.BadPositionException {
-        if (name.equals(Repository.DEFAULT_BRANCH)) {
-            throw new UnsupportedOperationException();
-        }
-        if (this.equals(Repository.getCurBranch())) {
-            throw new VCS.BadPositionException();
-        }
-
         try {
             Files.lines(commitsListPath).forEach(commit -> {
                 try {

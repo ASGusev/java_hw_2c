@@ -4,7 +4,11 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.nio.file.*;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -12,7 +16,8 @@ public class MergerTest {
     @Test
     public void simpleTest() throws IOException, VCS.RepoAlreadyExistsException,
             VCS.BadRepoException, VCS.BadPositionException, VCS.NoSuchFileException,
-            VCS.NoSuchCommitException, VCS.BranchAlreadyExistsException {
+            VCS.NoSuchCommitException, VCS.BranchAlreadyExistsException,
+            NoSuchAlgorithmException, VCS.NoSuchBranchException {
         final Path FILE_TO_KEEP = Paths.get("file_keep");
         final Path FILE_TO_UPDATE = Paths.get("file_upd");
         final Path FILE_TO_CREATE = Paths.get("file_create");
@@ -21,27 +26,46 @@ public class MergerTest {
         final String V1 = "v1";
         final String V2 = "v2";
 
-        try {
-            Repository.create("usr");
-            StagingZone stagingZone = Repository.getStagingZone();
+        try (RepoMock repo = new RepoMock()) {
+            Path storage = Paths.get(RepoMock.ROOT, RepoMock.COMMITS_FILES);
 
-            Files.write(FILE_TO_KEEP, KEPT_CONTENT.getBytes());
-            Files.write(FILE_TO_UPDATE, V1.getBytes());
-            stagingZone.add(new HashedFile(FILE_TO_KEEP, Paths.get(".")));
-            stagingZone.add(new HashedFile(FILE_TO_UPDATE, Paths.get(".")));
-            Commit masterCommit1 = new Commit("m1");
+            MessageDigest digest = MessageDigest.getInstance("MD5");
+            String hashKeep = new BigInteger(digest.digest(
+                    KEPT_CONTENT.getBytes())).toString();
+            String hashV1 = new BigInteger(digest.digest(V1.getBytes()))
+                    .toString();
+            String hashV2 = new BigInteger(digest.digest(V2.getBytes()))
+                    .toString();
+            String hashCreate = new BigInteger(digest.digest
+                    (CREATED_CONTENT.getBytes())).toString();
 
-            Repository.checkoutCommit(masterCommit1.getNumber());
-            Branch work = Branch.create("work");
+            Files.write(storage.resolve(hashCreate), CREATED_CONTENT.getBytes());
+            Files.write(storage.resolve(hashKeep), KEPT_CONTENT.getBytes());
+            Files.write(storage.resolve(hashV1), V1.getBytes());
+            Files.write(storage.resolve(hashV2), V2.getBytes());
 
-            Files.write(FILE_TO_CREATE, CREATED_CONTENT.getBytes());
-            Files.write(FILE_TO_UPDATE, V2.getBytes());
-            stagingZone.add(new HashedFile(FILE_TO_UPDATE, Paths.get(".")));
-            stagingZone.add(new HashedFile(FILE_TO_CREATE, Paths.get(".")));
-            Commit workCommit = new Commit("w1");
+            Files.write(Paths.get(RepoMock.ROOT, RepoMock.COMMITS_FILES_LIST),
+                    (hashCreate + " 1\n" + hashKeep + " 1\n" + hashV1 + " 1\n" +
+                    hashV2 + " 1\n").getBytes());
 
-            Repository.checkoutCommit(masterCommit1.getNumber());
-            Merger.merge(work);
+            List<String> files1 = Arrays.asList(
+                    FILE_TO_KEEP.toString() + " " + hashKeep,
+                    FILE_TO_UPDATE.toString() + " " + hashV1);
+
+            repo.commit(1, RepoMock.MASTER, files1, 0, "m1", 0);
+
+            Files.write(Paths.get(RepoMock.ROOT, RepoMock.BRANCHES,
+                    "work"), "1\n".getBytes());
+
+            List<String> files2 = Arrays.asList(
+                    FILE_TO_CREATE.toString() + " " + hashCreate,
+                    FILE_TO_UPDATE.toString() + " " + hashV2);
+            repo.commit(2, "work", files2, 0, "m2", 0);
+
+            Files.write(Paths.get(RepoMock.ROOT, RepoMock.POSITION),
+                    "master\n1".getBytes());
+            Files.write(Paths.get(RepoMock.ROOT, RepoMock.COMMIT), "3".getBytes());
+            Merger.merge(Branch.getByName("work"));
 
             Assert.assertEquals(Collections.singletonList(KEPT_CONTENT),
                     Files.readAllLines(FILE_TO_KEEP));
@@ -54,16 +78,9 @@ public class MergerTest {
             Files.createFile(Paths.get(Repository.REPO_DIR_NAME,
                     "commits_files_list"));
         } finally {
-            HashedDirectory.deleteDir(Repository.REPO_DIR_NAME);
-            if (Files.exists(FILE_TO_KEEP)) {
-                Files.delete(FILE_TO_KEEP);
-            }
-            if (Files.exists(FILE_TO_UPDATE)) {
-                Files.delete(FILE_TO_UPDATE);
-            }
-            if (Files.exists(FILE_TO_CREATE)) {
-                Files.delete(FILE_TO_CREATE);
-            }
+            Files.deleteIfExists(FILE_TO_KEEP);
+            Files.deleteIfExists(FILE_TO_UPDATE);
+            Files.deleteIfExists(FILE_TO_CREATE);
         }
     }
 
@@ -105,7 +122,9 @@ public class MergerTest {
             Commit masterCommit2 = new Commit("v5");
 
             Repository.checkoutCommit(masterCommit1.getNumber());
-            Branch workBranch = Branch.create("work");
+            Branch workBranch = Branch.create("work",
+                    masterCommit1.getNumber());
+            Repository.setCurrentBranch(workBranch);
             Files.write(FILE_UPDATED_IN_WORK, "v6".getBytes());
             Files.write(FILE_UPDATED_IN_BOTH, "v6".getBytes());
             Files.write(FILE_CREATED_IN_WORK, "v6".getBytes());
@@ -127,24 +146,12 @@ public class MergerTest {
             Assert.assertEquals(V3, Files.readAllLines(FILE_CREATED_IN_BOTH));
         } finally {
             HashedDirectory.deleteDir(Repository.REPO_DIR_NAME);
-            if (Files.exists(FILE_CREATED_IN_BOTH)) {
-                Files.delete(FILE_CREATED_IN_BOTH);
-            }
-            if (Files.exists(FILE_CREATED_IN_MASTER)) {
-                Files.delete(FILE_CREATED_IN_MASTER);
-            }
-            if (Files.exists(FILE_CREATED_IN_WORK)) {
-                Files.delete(FILE_CREATED_IN_WORK);
-            }
-            if (Files.exists(FILE_UPDATED_IN_BOTH)) {
-                Files.delete(FILE_UPDATED_IN_BOTH);
-            }
-            if (Files.exists(FILE_UPDATED_IN_MASTER)) {
-                Files.delete(FILE_UPDATED_IN_MASTER);
-            }
-            if (Files.exists(FILE_UPDATED_IN_WORK)) {
-                Files.delete(FILE_UPDATED_IN_WORK);
-            }
+            Files.deleteIfExists(FILE_CREATED_IN_BOTH);
+            Files.deleteIfExists(FILE_CREATED_IN_MASTER);
+            Files.deleteIfExists(FILE_CREATED_IN_WORK);
+            Files.deleteIfExists(FILE_UPDATED_IN_BOTH);
+            Files.deleteIfExists(FILE_UPDATED_IN_MASTER);
+            Files.deleteIfExists(FILE_UPDATED_IN_WORK);
         }
     }
 }

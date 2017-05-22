@@ -69,7 +69,8 @@ public class VCS {
      */
     public static void createBranch(@Nonnull String branchName) throws BadRepoException,
             BranchAlreadyExistsException {
-        Repository.setCurrentBranch(Branch.create(branchName));
+        Repository.setCurrentBranch(Branch.create(branchName,
+                Repository.getCurrentCommitNumber()));
     }
 
     /**
@@ -81,7 +82,11 @@ public class VCS {
      */
     public static void deleteBranch(@Nonnull String branchName) throws BadRepoException,
             NoSuchBranchException, BadPositionException {
-        Branch.getByName(branchName).delete();
+        Branch branchToDelete = Branch.getByName(branchName);
+        if (!branchToDelete.getName().equals(Repository.DEFAULT_BRANCH) &&
+                branchToDelete.equals(Repository.getCurBranch())) {
+            branchToDelete.delete();
+        }
     }
 
     /**

@@ -22,31 +22,31 @@ public class CommitTest {
         final List<String> EXPECTED_CONTENT =
                 Collections.singletonList(TEST_CONTENT);
 
-        try (TestingRepo repo = new TestingRepo()) {
-            Path filePath = Paths.get(TestingRepo.ROOT, TestingRepo.STAGE,
+        try (RepoMock repo = new RepoMock()) {
+            Path filePath = Paths.get(RepoMock.ROOT, RepoMock.STAGE,
                     TEST_FILE_NAME);
             Files.write(filePath, TEST_CONTENT.getBytes());
             String fileHash = HashedFile.calcFileHash(filePath.toString());
-            Files.write(Paths.get(TestingRepo.ROOT, TestingRepo.STAGE_LIST),
+            Files.write(Paths.get(RepoMock.ROOT, RepoMock.STAGE_LIST),
                     (TEST_FILE_NAME + " " + fileHash).getBytes());
 
             Commit commit = new Commit(MESSAGE);
-            Path commitDir = Paths.get(TestingRepo.ROOT, TestingRepo.COMMITS,
+            Path commitDir = Paths.get(RepoMock.ROOT, RepoMock.COMMITS,
                     commit.getNumber().toString());
 
             Scanner metadataScanner = new Scanner(
                     commitDir.resolve("metadata"));
             metadataScanner.next();
-            Assert.assertEquals(TestingRepo.MASTER,
+            Assert.assertEquals(RepoMock.MASTER,
                     metadataScanner.next());
-            Assert.assertEquals(TestingRepo.USERNAME, metadataScanner.next());
+            Assert.assertEquals(RepoMock.USERNAME, metadataScanner.next());
             Assert.assertEquals(0, metadataScanner.nextInt());
             metadataScanner.nextLine();
             Assert.assertEquals(MESSAGE, metadataScanner.nextLine());
 
             Assert.assertEquals(EXPECTED_CONTENT,
-                    Files.readAllLines(Paths.get(TestingRepo.ROOT,
-                            TestingRepo.COMMITS_FILES, fileHash)));
+                    Files.readAllLines(Paths.get(RepoMock.ROOT,
+                            RepoMock.COMMITS_FILES, fileHash)));
         }
     }
 }

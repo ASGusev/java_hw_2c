@@ -50,12 +50,8 @@ public class IntersectedFolderTest {
 
             Assert.assertEquals(expectedList, Files.readAllLines(folderList));
         } finally {
-            if (Files.exists(folderList)) {
-                Files.delete(folderList);
-            }
-            if (Files.exists(file)) {
-                Files.delete(file);
-            }
+            Files.deleteIfExists(folderList);
+            Files.deleteIfExists(file);
         }
     }
 
@@ -71,12 +67,8 @@ public class IntersectedFolderTest {
 
             Assert.assertEquals(hash, folder.getFile(file).getHash());
         } finally {
-            if (Files.exists(file)) {
-                Files.delete(file);
-            }
-            if (Files.exists(folderList)) {
-                Files.delete(folderList);
-            }
+            Files.deleteIfExists(file);
+            Files.deleteIfExists(folderList);
         }
     }
 
@@ -95,12 +87,8 @@ public class IntersectedFolderTest {
             Assert.assertTrue(Files.readAllLines(folderList).isEmpty());
             Mockito.verify(mockedStorage).delete(Mockito.anyString());
         } finally {
-            if (Files.exists(file)) {
-                Files.delete(file);
-            }
-            if (Files.exists(folderList)) {
-                Files.delete(folderList);
-            }
+            Files.delete(file);
+            Files.delete(folderList);
         }
     }
 }

@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class TestingRepo implements AutoCloseable {
+public class RepoMock implements AutoCloseable {
     protected static final String ROOT = ".vcs";
     protected static final String BRANCHES = "branches";
     protected static final String MASTER = "master";
@@ -26,7 +26,7 @@ public class TestingRepo implements AutoCloseable {
     protected static final String USERNAME = "usr";
     protected static final String STAGE = "stage";
 
-    public TestingRepo() throws IOException {
+    public RepoMock() throws IOException {
         Path repoRoot = Paths.get(ROOT);
 
         Files.createDirectory(repoRoot);
@@ -43,7 +43,7 @@ public class TestingRepo implements AutoCloseable {
         Files.write(repoRoot.resolve(USER), USERNAME.getBytes());
 
         commit(0, MASTER, new ArrayList<>(), 0,
-                "Initial commit.");
+                "Initial commit.", -1);
     }
 
 
@@ -53,7 +53,7 @@ public class TestingRepo implements AutoCloseable {
     }
 
     public void commit(Integer number, String branch, List<String> files,
-                       long time, String message)
+                       long time, String message, Integer parent)
             throws IOException {
         Path commitRoot = Paths.get(ROOT, COMMITS, number.toString());
         Files.createDirectory(commitRoot);
@@ -66,7 +66,7 @@ public class TestingRepo implements AutoCloseable {
             metadataWriter.write(String.valueOf(time) + "\n");
             metadataWriter.write(branch + "\n");
             metadataWriter.write(USERNAME + "\n");
-            metadataWriter.write(number.toString() + "\n");
+            metadataWriter.write(parent.toString() + "\n");
             metadataWriter.write(message);
         }
 
