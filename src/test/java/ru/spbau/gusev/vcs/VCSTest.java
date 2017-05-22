@@ -12,8 +12,8 @@ import java.nio.file.Paths;
 import java.util.Collections;
 
 public class VCSTest {
-    private final Path ignorePath = Paths.get(".ignore");
-    private final String ignoredFiles = ".vcs\n" +
+    private final static Path IGNORE_PATH = Paths.get(".ignore");
+    private final static String IGNORED_FILES = ".vcs\n" +
             ".git\n" +
             "src\n" +
             "build\n" +
@@ -30,12 +30,12 @@ public class VCSTest {
 
     @Before
     public void makeIgnore() throws IOException {
-        Files.write(ignorePath, ignoredFiles.getBytes());
+        Files.write(IGNORE_PATH, IGNORED_FILES.getBytes());
     }
 
     @After
     public void delIgnore() throws IOException {
-        Files.deleteIfExists(ignorePath);
+        Files.deleteIfExists(IGNORE_PATH);
     }
 
     @Test

@@ -141,9 +141,8 @@ public class Branch {
      */
     @Nonnull
     protected List<VCS.CommitDescription> getLog() throws VCS.BadRepoException {
-        List<VCS.CommitDescription> commitList;
         try {
-            commitList = Files.lines(commitsListPath).skip(1).map(number -> {
+            return Files.lines(commitsListPath).skip(1).map(number -> {
                 try {
                     Commit commit = new Commit(Integer.valueOf(number));
                     return new VCS.CommitDescription(commit);
@@ -156,7 +155,6 @@ public class Branch {
         } catch (Error e) {
             throw new VCS.BadRepoException("Error reading commit data.");
         }
-        return commitList;
     }
 
     /**

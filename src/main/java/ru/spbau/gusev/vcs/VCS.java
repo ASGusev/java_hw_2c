@@ -355,6 +355,10 @@ public class VCS {
         public FileSystemError(String message) {
             super(message);
         }
+
+        public FileSystemError(Throwable cause) {
+            super(cause);
+        }
     }
 
     /**

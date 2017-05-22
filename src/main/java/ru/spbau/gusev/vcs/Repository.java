@@ -80,8 +80,10 @@ public abstract class Repository {
         } catch (IOException | VCS.BadRepoException e) {
             try {
                 HashedDirectory.deleteDir(Paths.get(REPO_DIR_NAME));
-            } catch (IOException e1) {}
-            throw new VCS.FileSystemError();
+            } catch (IOException e1) {
+                e.addSuppressed(e1);
+            }
+            throw new VCS.FileSystemError(e);
         }
     }
 

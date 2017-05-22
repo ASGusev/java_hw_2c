@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 
 public class BranchTest {
@@ -15,66 +16,60 @@ public class BranchTest {
             VCS.BranchAlreadyExistsException, VCS.BadRepoException,
             VCS.NoSuchBranchException, VCS.BadPositionException {
         final String BRANCH_NAME = "br";
-        VCS.createRepo("usr");
-        try {
+
+        try (TestingRepo repo = new TestingRepo()) {
             Branch created = Branch.create(BRANCH_NAME);
             Path branchDescPath = Paths.get(Repository.REPO_DIR_NAME,
                     Repository.BRANCHES_DIR_NAME, BRANCH_NAME);
             Assert.assertTrue("Branch creation failure",
                     Files.exists(branchDescPath));
 
-            Repository.setCurrentBranch(Branch.getByName(Repository.DEFAULT_BRANCH));
+            Files.write(Paths.get(TestingRepo.ROOT, TestingRepo.POSITION),
+                    (TestingRepo.MASTER + "\n0").getBytes());
             created.delete();
             Assert.assertTrue("Branch deletion failure",
                     Files.notExists(branchDescPath));
-        } finally {
-            HashedDirectory.deleteDir(Paths.get(Repository.REPO_DIR_NAME));
         }
     }
 
     @Test
     public void commitAdditionTest() throws VCS.RepoAlreadyExistsException,
             VCS.BadPositionException, VCS.BadRepoException, IOException,
-            VCS.NoSuchBranchException {
-        try {
-            Repository.create("usr");
+            VCS.NoSuchBranchException, VCS.NoSuchCommitException {
+        try (TestingRepo repo = new TestingRepo()) {
             Branch masterBranch = Branch.getByName(Repository.DEFAULT_BRANCH);
             Assert.assertEquals(Repository.DEFAULT_BRANCH, masterBranch.getName());
-            Commit commit = new Commit("test");
+            repo.commit(1, TestingRepo.MASTER, new ArrayList<>(),
+                    0, "msg");
+            Commit commit = new Commit(1);
             masterBranch.addCommit(commit);
             List<String> masterCommits = Files.readAllLines(Paths.get(Repository.REPO_DIR_NAME,
                     Repository.BRANCHES_DIR_NAME, masterBranch.getName()));
-            Assert.assertEquals(commit.getNumber().toString(),
+            Assert.assertEquals(String.valueOf(1),
                     masterCommits.get(masterCommits.size() - 1));
 
             Assert.assertEquals(commit, masterBranch.getHead());
-        } finally {
-            HashedDirectory.deleteDir(Repository.REPO_DIR_NAME);
         }
     }
 
     @Test
     public void logTest() throws IOException, VCS.RepoAlreadyExistsException,
-            VCS.BadPositionException, VCS.BadRepoException {
+            VCS.BadPositionException, VCS.BadRepoException, VCS.NoSuchBranchException {
         final String COMMIT_MESSAGE = "msg";
 
-        try {
-            Repository.create("usr");
-
-            Commit commit = new Commit(COMMIT_MESSAGE);
-            Branch branch = Repository.getCurBranch();
+        try (TestingRepo repo = new TestingRepo()) {
+            long time = System.currentTimeMillis();
+            repo.commit(1, TestingRepo.MASTER, new ArrayList<>(), time,
+                    COMMIT_MESSAGE);
+            Branch branch = Branch.getByName(TestingRepo.MASTER);
             List<VCS.CommitDescription> log = branch.getLog();
             VCS.CommitDescription commitDescription = log.get(0);
 
-            Assert.assertEquals((long)commit.getNumber(), commitDescription.getNumber());
-            Assert.assertEquals(commit.getAuthor(), commitDescription.getAuthor());
-            Assert.assertEquals(commit.getBranch().getName(),
-                    commitDescription.getBranch());
-            Assert.assertEquals(commit.getMessage(), commitDescription.getMessage());
-            Assert.assertEquals(commit.getCreationTime(),
-                    commitDescription.getTime().getTimeInMillis());
-        } finally {
-            HashedDirectory.deleteDir(Repository.REPO_DIR_NAME);
+            Assert.assertEquals(1, commitDescription.getNumber());
+            Assert.assertEquals(TestingRepo.USERNAME, commitDescription.getAuthor());
+            Assert.assertEquals(TestingRepo.MASTER, commitDescription.getBranch());
+            Assert.assertEquals(COMMIT_MESSAGE, commitDescription.getMessage());
+            Assert.assertEquals(time, commitDescription.getTime().getTimeInMillis());
         }
     }
 }

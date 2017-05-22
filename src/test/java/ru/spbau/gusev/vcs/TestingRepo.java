@@ -1,9 +1,14 @@
 package ru.spbau.gusev.vcs;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class TestingRepo implements AutoCloseable {
     protected static final String ROOT = ".vcs";
@@ -26,27 +31,46 @@ public class TestingRepo implements AutoCloseable {
 
         Files.createDirectory(repoRoot);
         Files.createDirectory(repoRoot.resolve(BRANCHES));
-        Files.write(repoRoot.resolve(BRANCHES).resolve(MASTER), "0".getBytes());
         Files.createDirectory(repoRoot.resolve(COMMITS));
-        Files.createDirectory(repoRoot.resolve(COMMITS).resolve("0"));
-        Files.createFile(repoRoot.resolve(COMMITS).resolve("0")
-                .resolve(FILES_LIST));
-        Files.write(repoRoot.resolve(COMMITS).resolve("0").resolve(METADATA),
-                ("0\n"+ MASTER + "\n" + USERNAME + "\n-1\nInitial commit.").
-                        getBytes());
         Files.createDirectory(repoRoot.resolve(COMMITS_FILES));
         Files.createDirectory(repoRoot.resolve(STAGE));
+        Files.createFile(repoRoot.resolve(BRANCHES).resolve(MASTER));
 
         Files.write(repoRoot.resolve(COMMIT), "1".getBytes());
         Files.createFile(repoRoot.resolve(COMMITS_FILES_LIST));
         Files.write(repoRoot.resolve(POSITION), (MASTER + "\n0").getBytes());
         Files.createFile(repoRoot.resolve(STAGE_LIST));
         Files.write(repoRoot.resolve(USER), USERNAME.getBytes());
+
+        commit(0, MASTER, new ArrayList<>(), 0,
+                "Initial commit.");
     }
 
 
     @Override
     public void close() throws IOException {
         HashedDirectory.deleteDir(ROOT);
+    }
+
+    public void commit(Integer number, String branch, List<String> files,
+                       long time, String message)
+            throws IOException {
+        Path commitRoot = Paths.get(ROOT, COMMITS, number.toString());
+        Files.createDirectory(commitRoot);
+
+        Files.write(commitRoot.resolve(FILES_LIST),
+                String.join("\n", files).getBytes());
+
+        try (BufferedWriter metadataWriter =
+                Files.newBufferedWriter(commitRoot.resolve(METADATA))) {
+            metadataWriter.write(String.valueOf(time) + "\n");
+            metadataWriter.write(branch + "\n");
+            metadataWriter.write(USERNAME + "\n");
+            metadataWriter.write(number.toString() + "\n");
+            metadataWriter.write(message);
+        }
+
+        Files.write(Paths.get(ROOT, BRANCHES, branch),
+                (number.toString() + "\n").getBytes(), StandardOpenOption.APPEND);
     }
 }

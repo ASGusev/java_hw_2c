@@ -12,8 +12,8 @@ import java.util.Collections;
 import java.util.stream.Stream;
 
 public class WorkingDirectoryTest {
-    Path testDir = Paths.get("test_dir");
-    Path curDir = Paths.get(".");
+    private static final Path TEST_DIR = Paths.get("test_dir");
+    private static final Path CUR_DIR = Paths.get(".");
 
     @Test
     public void addTest() throws IOException {
@@ -21,16 +21,16 @@ public class WorkingDirectoryTest {
         String fileContent = "bar";
 
         try {
-            Files.createDirectory(testDir);
-            WorkingDirectory workingDirectory = new WorkingDirectory(testDir);
+            Files.createDirectory(TEST_DIR);
+            WorkingDirectory workingDirectory = new WorkingDirectory(TEST_DIR);
             Files.write(filePath, fileContent.getBytes());
-            workingDirectory.add(new HashedFile(filePath, curDir));
+            workingDirectory.add(new HashedFile(filePath, CUR_DIR));
 
-            Assert.assertTrue(Files.isRegularFile(testDir.resolve(filePath)));
+            Assert.assertTrue(Files.isRegularFile(TEST_DIR.resolve(filePath)));
             Assert.assertEquals(Collections.singletonList(fileContent),
-                    Files.readAllLines(testDir.resolve(filePath)));
+                    Files.readAllLines(TEST_DIR.resolve(filePath)));
         } finally {
-            HashedDirectory.deleteDir(testDir);
+            HashedDirectory.deleteDir(TEST_DIR);
             Files.delete(filePath);
         }
     }
@@ -41,14 +41,14 @@ public class WorkingDirectoryTest {
         String fileContent = "bar";
 
         try {
-            Files.createDirectory(testDir);
-            WorkingDirectory workingDirectory = new WorkingDirectory(testDir);
-            Files.write(testDir.resolve(filePath), fileContent.getBytes());
+            Files.createDirectory(TEST_DIR);
+            WorkingDirectory workingDirectory = new WorkingDirectory(TEST_DIR);
+            Files.write(TEST_DIR.resolve(filePath), fileContent.getBytes());
             workingDirectory.delete(filePath);
 
-            Assert.assertTrue(Files.notExists(testDir.resolve(filePath)));
+            Assert.assertTrue(Files.notExists(TEST_DIR.resolve(filePath)));
         } finally {
-            HashedDirectory.deleteDir(testDir);
+            HashedDirectory.deleteDir(TEST_DIR);
         }
     }
 
@@ -58,16 +58,16 @@ public class WorkingDirectoryTest {
         Path filePath2 = Paths.get("bar");
 
         try {
-            Files.createDirectory(testDir);
-            WorkingDirectory workingDirectory = new WorkingDirectory(testDir);
-            Files.createFile(testDir.resolve(filePath1));
-            Files.createFile(testDir.resolve(filePath2));
+            Files.createDirectory(TEST_DIR);
+            WorkingDirectory workingDirectory = new WorkingDirectory(TEST_DIR);
+            Files.createFile(TEST_DIR.resolve(filePath1));
+            Files.createFile(TEST_DIR.resolve(filePath2));
             workingDirectory.deleteIf(filePath1::equals);
 
-            Assert.assertTrue(Files.notExists(testDir.resolve(filePath1)));
-            Assert.assertTrue(Files.exists(testDir.resolve(filePath2)));
+            Assert.assertTrue(Files.notExists(TEST_DIR.resolve(filePath1)));
+            Assert.assertTrue(Files.exists(TEST_DIR.resolve(filePath2)));
         } finally {
-            HashedDirectory.deleteDir(testDir);
+            HashedDirectory.deleteDir(TEST_DIR);
         }
     }
 
@@ -77,17 +77,17 @@ public class WorkingDirectoryTest {
         String fileContent = "bar";
 
         try {
-            Files.createDirectory(testDir);
-            WorkingDirectory workingDirectory = new WorkingDirectory(testDir);
-            Files.write(testDir.resolve(filePath), fileContent.getBytes());
+            Files.createDirectory(TEST_DIR);
+            WorkingDirectory workingDirectory = new WorkingDirectory(TEST_DIR);
+            Files.write(TEST_DIR.resolve(filePath), fileContent.getBytes());
 
             HashedFile hashedFile = workingDirectory.getHashedFile(filePath.toString());
-            Assert.assertEquals(testDir, hashedFile.getDir());
+            Assert.assertEquals(TEST_DIR, hashedFile.getDir());
             Assert.assertEquals(filePath, hashedFile.getName());
             Assert.assertEquals(HashedFile.calcFileHash
-                    (testDir.resolve(filePath).toString()), hashedFile.getHash());
+                    (TEST_DIR.resolve(filePath).toString()), hashedFile.getHash());
         } finally {
-            HashedDirectory.deleteDir(testDir);
+            HashedDirectory.deleteDir(TEST_DIR);
         }
     }
 
@@ -97,17 +97,17 @@ public class WorkingDirectoryTest {
         Path filePath2 = Paths.get("bar");
 
         try {
-            Files.createDirectory(testDir);
-            Files.createFile(testDir.resolve(filePath1));
-            Files.createFile(testDir.resolve(filePath2));
-            Files.write(testDir.resolve(".ignore"), filePath2.toString().getBytes());
-            WorkingDirectory workingDirectory = new WorkingDirectory(testDir);
+            Files.createDirectory(TEST_DIR);
+            Files.createFile(TEST_DIR.resolve(filePath1));
+            Files.createFile(TEST_DIR.resolve(filePath2));
+            Files.write(TEST_DIR.resolve(".ignore"), filePath2.toString().getBytes());
+            WorkingDirectory workingDirectory = new WorkingDirectory(TEST_DIR);
 
             Stream<HashedFile> filesInDir = workingDirectory.getFiles();
             Assert.assertTrue(filesInDir.map(HashedFile::getName)
                     .allMatch(filePath1::equals));
         } finally {
-            HashedDirectory.deleteDir(testDir);
+            HashedDirectory.deleteDir(TEST_DIR);
         }
     }
 }
