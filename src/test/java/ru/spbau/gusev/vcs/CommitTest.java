@@ -16,34 +16,37 @@ public class CommitTest {
     public void creationTest() throws IOException, VCS.RepoAlreadyExistsException,
             VCS.NoSuchFileException, VCS.NoSuchBranchException, VCS.BadRepoException,
             VCS.BadPositionException {
-        final String USERNAME = "user";
         final String TEST_CONTENT = "foo";
         final String TEST_FILE_NAME = "foo";
         final String MESSAGE = "bar";
-        final List<String> EXPECTED_CONTENT = Collections.singletonList(TEST_CONTENT);
+        final List<String> EXPECTED_CONTENT =
+                Collections.singletonList(TEST_CONTENT);
 
-        try {
-            VCS.createRepo(USERNAME);
-            Files.write(Paths.get(TEST_FILE_NAME), TEST_CONTENT.getBytes());
-            HashedFile testFile = Repository.getWorkingDirectory().
-                    getHashedFile(TEST_FILE_NAME);
-            Repository.getStagingZone().add(testFile);
+        try (TestingRepo repo = new TestingRepo()) {
+            Path filePath = Paths.get(TestingRepo.ROOT, TestingRepo.STAGE,
+                    TEST_FILE_NAME);
+            Files.write(filePath, TEST_CONTENT.getBytes());
+            String fileHash = HashedFile.calcFileHash(filePath.toString());
+            Files.write(Paths.get(TestingRepo.ROOT, TestingRepo.STAGE_LIST),
+                    (TEST_FILE_NAME + " " + fileHash).getBytes());
+
             Commit commit = new Commit(MESSAGE);
-            Path commitDir = Paths.get(Repository.REPO_DIR_NAME, Repository.COMMITS_DIR_NAME,
+            Path commitDir = Paths.get(TestingRepo.ROOT, TestingRepo.COMMITS,
                     commit.getNumber().toString());
 
             Scanner metadataScanner = new Scanner(
                     commitDir.resolve("metadata"));
             metadataScanner.next();
-            Assert.assertEquals(Repository.getCurBranch().getName(),
+            Assert.assertEquals(TestingRepo.MASTER,
                     metadataScanner.next());
-            Assert.assertEquals(USERNAME, metadataScanner.next());
+            Assert.assertEquals(TestingRepo.USERNAME, metadataScanner.next());
             Assert.assertEquals(0, metadataScanner.nextInt());
             metadataScanner.nextLine();
             Assert.assertEquals(MESSAGE, metadataScanner.nextLine());
-        } finally {
-            Files.delete(Paths.get(TEST_FILE_NAME));
-            HashedDirectory.deleteDir(Repository.REPO_DIR_NAME);
+
+            Assert.assertEquals(EXPECTED_CONTENT,
+                    Files.readAllLines(Paths.get(TestingRepo.ROOT,
+                            TestingRepo.COMMITS_FILES, fileHash)));
         }
     }
 }
