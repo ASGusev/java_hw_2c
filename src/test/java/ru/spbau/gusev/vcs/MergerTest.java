@@ -109,7 +109,7 @@ public class MergerTest {
             stagingZone.add(new HashedFile(FILE_UPDATED_IN_MASTER, curDir));
             stagingZone.add(new HashedFile(FILE_UPDATED_IN_WORK, curDir));
             stagingZone.add(new HashedFile(FILE_UPDATED_IN_BOTH, curDir));
-            Commit masterCommit1 = new Commit("v4");
+            Commit masterCommit1 = Commit.create("v4");
 
             Files.write(FILE_UPDATED_IN_MASTER, "v5".getBytes());
             Files.write(FILE_UPDATED_IN_BOTH, "v5".getBytes());
@@ -119,7 +119,7 @@ public class MergerTest {
             stagingZone.add(new HashedFile(FILE_UPDATED_IN_BOTH, curDir));
             stagingZone.add(new HashedFile(FILE_CREATED_IN_MASTER, curDir));
             stagingZone.add(new HashedFile(FILE_CREATED_IN_BOTH, curDir));
-            Commit masterCommit2 = new Commit("v5");
+            Commit masterCommit2 = Commit.create("v5");
 
             Repository.checkoutCommit(masterCommit1.getNumber());
             Branch workBranch = Branch.create("work",
@@ -133,7 +133,7 @@ public class MergerTest {
             stagingZone.add(new HashedFile(FILE_UPDATED_IN_BOTH, curDir));
             stagingZone.add(new HashedFile(FILE_CREATED_IN_WORK, curDir));
             stagingZone.add(new HashedFile(FILE_CREATED_IN_BOTH, curDir));
-            Commit workCommit = new Commit("v6");
+            Commit workCommit = Commit.create("v6");
 
             Repository.checkoutCommit(masterCommit2.getNumber());
             Merger.merge(workBranch);

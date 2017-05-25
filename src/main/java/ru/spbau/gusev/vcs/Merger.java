@@ -65,10 +65,11 @@ public abstract class Merger {
         stagingZone.wipe();
         resFiles.forEach((path, desc) -> stagingZone.add(desc));
 
-        Commit mergedCommit = new Commit("Branch " + branchToMerge.getName() + " merged.");
+        Commit mergedCommit = Commit.create("Branch " + branchToMerge.getName() + " merged.");
         WorkingDirectory workingDirectory = Repository.getWorkingDirectory();
         curCommit.removeFrom(workingDirectory);
-        mergedCommit.checkout(workingDirectory);
+        mergedCommit.checkout(workingDirectory, stagingZone);
+        Repository.setCurrentCommit(mergedCommit);
         return mergedCommit;
     }
 }

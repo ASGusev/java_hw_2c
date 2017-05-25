@@ -41,7 +41,7 @@ public class BranchTest {
             Assert.assertEquals(Repository.DEFAULT_BRANCH, masterBranch.getName());
             repo.commit(1, RepoMock.MASTER, new ArrayList<>(),
                     0, "msg", 0);
-            Commit commit = new Commit(1);
+            Commit commit = Commit.read(1);
             masterBranch.addCommit(commit);
             List<String> masterCommits = Files.readAllLines(Paths.get(Repository.REPO_DIR_NAME,
                     Repository.BRANCHES_DIR_NAME, masterBranch.getName()));

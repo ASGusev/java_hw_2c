@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 /**
  * A class with methods for operating with the repository.
  */
-public abstract class Repository {
+public class Repository {
     protected static final String REPO_DIR_NAME = ".vcs";
     protected static final String BRANCHES_DIR_NAME = "branches";
     protected static final String COMMITS_DIR_NAME = "commits";
@@ -30,6 +30,8 @@ public abstract class Repository {
     private static WorkingDirectory workingDirectory;
     private static IntersectedFolderStorage commitStorage;
 
+    private Repository(){}
+
     /**
      * Initialises a repository in the current directory. A folder with all the
      * necessary information is created.
@@ -38,7 +40,7 @@ public abstract class Repository {
      * in the current folder.
      * @throws IllegalArgumentException if the author parameter is an empty string.
      */
-    protected static void create(@Nonnull String author) throws VCS.RepoAlreadyExistsException {
+    protected static Repository create(@Nonnull String author) throws VCS.RepoAlreadyExistsException {
         if (Files.exists(Paths.get(Repository.REPO_DIR_NAME), LinkOption.NOFOLLOW_LINKS)) {
             throw new VCS.RepoAlreadyExistsException();
         }
@@ -73,7 +75,7 @@ public abstract class Repository {
             //Preparing initial commit
             Files.createDirectory(Paths.get(REPO_DIR_NAME, COMMITS_DIR_NAME));
             try {
-                new Commit("Initial commit.");
+                Commit.create("Initial commit.");
             } catch (VCS.BadPositionException e) {
                 throw new VCS.BadRepoException();
             }
@@ -85,6 +87,14 @@ public abstract class Repository {
             }
             throw new VCS.FileSystemError(e);
         }
+        return new Repository();
+    }
+
+    protected Repository get() {
+        if (!Files.isDirectory(Paths.get(REPO_DIR_NAME))) {
+            throw new IllegalStateException("No repository found.");
+        }
+        return new Repository();
     }
 
     /**
@@ -209,7 +219,7 @@ public abstract class Repository {
     @Nonnull
     protected static Commit getCurrentCommit() throws VCS.BadRepoException {
         try {
-            return new Commit(getCurrentCommitNumber());
+            return Commit.read(getCurrentCommitNumber());
         } catch (VCS.NoSuchCommitException e){
             throw new VCS.BadRepoException("Current commit not found.");
         }
@@ -276,8 +286,9 @@ public abstract class Repository {
         Commit curCommit = Repository.getCurrentCommit();
         curCommit.removeFrom(getWorkingDirectory());
         getStagingZone().wipe();
-        Commit newCommit = new Commit(commitID);
-        newCommit.checkout(getWorkingDirectory());
+        Commit newCommit = Commit.read(commitID);
+        newCommit.checkout(getWorkingDirectory(), getStagingZone());
+        setCurrentCommit(newCommit);
     }
 
     /**

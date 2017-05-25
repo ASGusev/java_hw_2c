@@ -30,7 +30,7 @@ public class CommitTest {
             Files.write(Paths.get(RepoMock.ROOT, RepoMock.STAGE_LIST),
                     (TEST_FILE_NAME + " " + fileHash).getBytes());
 
-            Commit commit = new Commit(MESSAGE);
+            Commit commit = Commit.create(MESSAGE);
             Path commitDir = Paths.get(RepoMock.ROOT, RepoMock.COMMITS,
                     commit.getNumber().toString());
 

@@ -28,15 +28,11 @@ public class Commit {
     private final Path rootDir;
     private final IntersectedFolder contentFolder;
 
-    /**
-     * Creates a new commit in the repository with given message in the current
-     * branch and sets it as the global head.
-     * @param message the commit message.
-     * @throws VCS.BadRepoException if the repository folder is corrupt.
-     * @throws VCS.BadPositionException if current commit is not the head of its branch.
-     */
-    protected Commit(@Nonnull String message) throws VCS.BadRepoException,
-            VCS.BadPositionException {
+    private Commit(@Nonnull Integer number, @Nonnull Branch branch,
+                     @Nonnull String author, @Nonnull String message,
+                     @Nonnull IntersectedFolderStorage storage,
+                     @Nonnull StagingZone stagingZone)
+            throws VCS.BadRepoException, VCS.BadPositionException {
         if (Files.notExists(Paths.get(Repository.REPO_DIR_NAME,
                 Repository.COMMITS_DIR_NAME))) {
             throw new VCS.BadRepoException("Commits directory not found.");
@@ -45,14 +41,14 @@ public class Commit {
             throw new IllegalArgumentException("Empty commit message.");
         }
 
-        number = Repository.getCommitsNumber();
-        rootDir = Paths.get(Repository.REPO_DIR_NAME, Repository.COMMITS_DIR_NAME,
-                number.toString());
+        rootDir = Paths.get(Repository.REPO_DIR_NAME,
+                Repository.COMMITS_DIR_NAME, number.toString());
         creationTime = System.currentTimeMillis();
         this.message = message;
-        branch = Repository.getCurBranch();
-        author = Repository.getUserName();
-        father = Repository.getCurrentCommitNumber();
+        father = branch.getHeadNumber();
+        this.author = author;
+        this.branch = branch;
+        this.number = number;
 
         if (!branch.getHeadNumber().equals(father)) {
             throw new VCS.BadPositionException("Attempt to create a commit not in " +
@@ -71,9 +67,8 @@ public class Commit {
             metadataWriter.write(message);
             metadataWriter.close();
 
-            contentFolder = new IntersectedFolder(Repository.getCommitStorage(),
-                    rootDir.resolve(COMMIT_FILES_LIST));
-            Repository.getStagingZone().getFiles().forEach(contentFolder::add);
+            contentFolder = new IntersectedFolder(storage, rootDir.resolve(COMMIT_FILES_LIST));
+            stagingZone.getFiles().forEach(contentFolder::add);
             contentFolder.writeList();
 
             branch.addCommit(this);
@@ -87,6 +82,12 @@ public class Commit {
         }
     }
 
+    protected static Commit create(@Nonnull String message) throws VCS.BadRepoException, VCS.BadPositionException {
+        return new Commit(Repository.getCommitsNumber(),
+                Repository.getCurBranch(), Repository.getUserName(), message,
+                Repository.getCommitStorage(), Repository.getStagingZone());
+    }
+
     /**
      * Reads an already existing commit from the repository.
      * @param number the number of commit to be read.
@@ -94,7 +95,7 @@ public class Commit {
      * exist.
      * @throws VCS.BadRepoException if the repository data folder is corrupt.
      */
-    protected Commit(@Nonnull Integer number) throws VCS.NoSuchCommitException,
+    private Commit(@Nonnull Integer number) throws VCS.NoSuchCommitException,
             VCS.BadRepoException {
         this.number = number;
         rootDir = Paths.get(Repository.REPO_DIR_NAME, Repository.COMMITS_DIR_NAME,
@@ -127,6 +128,11 @@ public class Commit {
         } catch (VCS.NoSuchBranchException e) {
             throw new VCS.BadRepoException("Requested commit not found.");
         }
+    }
+
+    protected static Commit read(@Nonnull Integer number)
+            throws VCS.NoSuchCommitException, VCS.BadRepoException {
+        return new Commit(number);
     }
 
     /**
@@ -183,7 +189,7 @@ public class Commit {
     @Nonnull
     protected Commit getFather() throws VCS.BadRepoException {
         try {
-            return new Commit(father);
+            return Commit.read(father);
         } catch (VCS.NoSuchCommitException e) {
             throw new VCS.BadRepoException("Error reading commit's father.");
         }
@@ -204,14 +210,11 @@ public class Commit {
      * @param directory the directory which the commit files should be copied to.
      * @throws VCS.BadRepoException if the repository folder is corrupt.
      */
-    protected void checkout(@Nonnull WorkingDirectory directory) throws
+    protected void checkout(@Nonnull WorkingDirectory directory,
+                            @Nonnull StagingZone stagingZone) throws
             VCS.BadRepoException {
-        contentFolder.getFiles().forEach(directory::add);
-
-        final StagingZone stagingZone = Repository.getStagingZone();
-        contentFolder.getFiles().forEach(stagingZone::add);
-
-        Repository.setCurrentCommit(this);
+        contentFolder.getFiles().peek(directory::add)
+                .forEach(stagingZone::add);
     }
 
     /**

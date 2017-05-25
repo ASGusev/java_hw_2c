@@ -44,7 +44,7 @@ public class VCS {
         if (getStaged().isEmpty()) {
             throw new NothingToCommitException();
         }
-        Repository.setCurrentCommit(new Commit(message));
+        Repository.setCurrentCommit(Commit.create(message));
     }
 
     /**

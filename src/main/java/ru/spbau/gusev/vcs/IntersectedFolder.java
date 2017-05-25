@@ -26,7 +26,8 @@ public class IntersectedFolder {
      * @param storage the storage where files should be kept.
      * @param listPath the path to the file with a list of the folder content.
      */
-    IntersectedFolder(IntersectedFolderStorage storage, Path listPath) {
+    IntersectedFolder(@Nonnull IntersectedFolderStorage storage,
+                      @Nonnull Path listPath) {
         this.storage = storage;
         this.listPath = listPath;
         if (Files.isRegularFile(listPath)) {

@@ -127,7 +127,7 @@ public class Branch {
     @Nonnull
     protected Commit getHead() throws VCS.BadRepoException {
         try {
-            return new Commit(getHeadNumber());
+            return Commit.read(getHeadNumber());
         } catch (VCS.NoSuchCommitException e) {
             throw new VCS.BadRepoException("Branch's head commit not found.");
         }
@@ -143,7 +143,7 @@ public class Branch {
         try {
             return Files.lines(commitsListPath).skip(1).map(number -> {
                 try {
-                    Commit commit = new Commit(Integer.valueOf(number));
+                    Commit commit = Commit.read(Integer.valueOf(number));
                     return new VCS.CommitDescription(commit);
                 } catch (VCS.NoSuchCommitException | VCS.BadRepoException e) {
                     throw new Error();
@@ -168,7 +168,7 @@ public class Branch {
         try {
             Files.lines(commitsListPath).forEach(commit -> {
                 try {
-                    new Commit(Integer.valueOf(commit)).delete();
+                    Commit.read(Integer.valueOf(commit)).delete();
                 } catch (VCS.NoSuchCommitException | VCS.BadRepoException e) {
                     throw new Error();
                 }
