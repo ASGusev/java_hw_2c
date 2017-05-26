@@ -19,8 +19,8 @@ public class BranchTest {
         final String BRANCH_NAME = "br";
 
         try (RepoDir repo = new RepoDir()) {
-            Branch created = Branch.create(BRANCH_NAME, 0,
-                    Repository.getExisting());
+            Branch created = Branch.create(BRANCH_NAME,
+                    Mockito.mock(Repository.class));
             Path branchDescPath = Paths.get(Repository.REPO_DIR_NAME,
                     Repository.BRANCHES_DIR_NAME, BRANCH_NAME);
             Assert.assertTrue("Branch creation failure",
@@ -48,7 +48,8 @@ public class BranchTest {
                     0, "msg", 0);
             Commit commit = Commit.read(1, repository);
             masterBranch.addCommit(commit);
-            List<String> masterCommits = Files.readAllLines(Paths.get(Repository.REPO_DIR_NAME,
+            List<String> masterCommits = Files.readAllLines(
+                    Paths.get(Repository.REPO_DIR_NAME,
                     Repository.BRANCHES_DIR_NAME, masterBranch.getName()));
             Assert.assertEquals(String.valueOf(1),
                     masterCommits.get(masterCommits.size() - 1));
@@ -67,7 +68,7 @@ public class BranchTest {
             repo.commit(1, RepoDir.MASTER, new ArrayList<>(), time,
                     COMMIT_MESSAGE, 0);
             Branch branch = Branch.getByName(RepoDir.MASTER,
-                    Repository.getExisting());
+                    Mockito.mock(Repository.class));
             List<VCS.CommitDescription> log = branch.getLog();
             VCS.CommitDescription commitDescription = log.get(0);
 

@@ -11,7 +11,7 @@ import java.util.Scanner;
 import java.util.stream.Collectors;
 
 /**
- * A class with methods for operating with the repository.
+ * A class representing a VCS repository.
  */
 public class Repository {
     protected static final String REPO_DIR_NAME = ".vcs";
@@ -49,8 +49,8 @@ public class Repository {
      * Initialises a repository in the current directory. A folder with all the
      * necessary information is created.
      * @param author the first username for the created repository.
-     * @throws VCS.RepoAlreadyExistsException if a repository is already initialised
-     * in the current folder.
+     * @throws VCS.RepoAlreadyExistsException if a repository is already
+     * initialised in the current folder.
      * @throws IllegalArgumentException if the author parameter is an empty string.
      */
     protected static Repository create(@Nonnull String author) throws VCS.RepoAlreadyExistsException {
@@ -105,6 +105,12 @@ public class Repository {
         }
     }
 
+    /**
+     * Makes a Repository instance for a repository already existing in the
+     * current folder.
+     * @return Repository instance for a repository already existing in the
+     * current folder.
+     */
     protected static Repository getExisting() {
         if (!Files.isDirectory(Paths.get(REPO_DIR_NAME))) {
             throw new IllegalStateException("No repository found.");

@@ -21,6 +21,14 @@ public class Branch {
     private final Path commitsListPath;
     private final Repository repository;
 
+    /**
+     * Creates a Branch object for the branch with the given name in the
+     * given repository.
+     * @param name the name of the branch.
+     * @param repository the repository containing the branch.
+     * @throws VCS.NoSuchBranchException if a branch with the given name does
+     * not exist in the given repository.
+     */
     private Branch(@Nonnull String name, @Nonnull Repository repository)
             throws VCS.NoSuchBranchException {
         this.name = name;
@@ -34,13 +42,15 @@ public class Branch {
     /**
      * Creates a new branch in the repository.
      * @param name the name for the new branch.
+     * @param repository the repository in which the new branch should be
+     *                   located.
      * @return an object representing the new branch.
      * @throws VCS.BranchAlreadyExistsException if a branch with the given
      * name already exists in the repository.
      * @throws VCS.BadRepoException if the repository folder is corrupt.
      */
     @Nonnull
-    protected static Branch create(@Nonnull String name, Integer parentCommit,
+    protected static Branch create(@Nonnull String name,
                                    @Nonnull Repository repository)
             throws VCS.BranchAlreadyExistsException, VCS.BadRepoException {
         if (name.isEmpty()) {
@@ -55,7 +65,7 @@ public class Branch {
             throw new VCS.BadRepoException("Branches folder not found.");
         }
         try {
-            Files.write(descPath, (parentCommit.toString()
+            Files.write(descPath, (repository.getCurrentCommitNumber().toString()
                     + '\n').getBytes());
         } catch (IOException e) {
             throw new VCS.FileSystemError("Branch description creation error.");
@@ -69,7 +79,8 @@ public class Branch {
 
     /**
      * Reads an existing branch from the repo.
-     * @param name the name of the branch to getExisting
+     * @param name the name of the branch to get.
+     * @param repository the repository that the branch belongs to.
      * @return an object representing the requested branch.
      * @throws VCS.NoSuchBranchException if the requested branch does not exist.
      */

@@ -123,8 +123,7 @@ public class MergerTest {
             Commit masterCommit2 = Commit.create("v5" ,repo);
 
             repo.checkoutCommit(masterCommit1.getNumber());
-            Branch workBranch = Branch.create("work",
-                    masterCommit1.getNumber(), repo);
+            Branch workBranch = Branch.create("work", repo);
             repo.setCurrentBranch(workBranch);
             Files.write(FILE_UPDATED_IN_WORK, "v6".getBytes());
             Files.write(FILE_UPDATED_IN_BOTH, "v6".getBytes());

@@ -29,6 +29,14 @@ public class Commit {
     private final IntersectedFolder contentFolder;
     private final Repository repository;
 
+    /**
+     * Creates a Commit object writing its data to the disk.
+     * @param message a message for the new commit.
+     * @param repository the repository in which the commit should be located.
+     * @throws VCS.BadRepoException if the repository is corrupt.
+     * @throws VCS.BadPositionException if the head is not in the end of
+     * the current branch.
+     */
     private Commit(@Nonnull String message, @Nonnull Repository repository)
             throws VCS.BadRepoException, VCS.BadPositionException {
         if (Files.notExists(Paths.get(Repository.REPO_DIR_NAME,
@@ -82,8 +90,9 @@ public class Commit {
     }
 
     /**
-     * Reads an already existing commit from the repository.
+     * Creates a Commit instance for a commit already existing in a repository.
      * @param number the number of commit to be read.
+     * @param repository the repository in which the commit is located.
      * @throws VCS.NoSuchCommitException if a commit with the given number does not
      * exist.
      * @throws VCS.BadRepoException if the repository data folder is corrupt.
@@ -92,8 +101,8 @@ public class Commit {
             throws VCS.NoSuchCommitException, VCS.BadRepoException {
         this.number = number;
         this.repository = repository;
-        rootDir = Paths.get(Repository.REPO_DIR_NAME, Repository.COMMITS_DIR_NAME,
-                number.toString());
+        rootDir = Paths.get(Repository.REPO_DIR_NAME,
+                Repository.COMMITS_DIR_NAME, number.toString());
 
         if (Files.notExists(rootDir)) {
             throw new VCS.NoSuchCommitException();
@@ -124,15 +133,34 @@ public class Commit {
         }
     }
 
-    protected static Commit create(@Nonnull String message, Repository repo)
+    /**
+     * Makes a Commit writing its data to the disk.
+     * @param message a message for the new commit.
+     * @param repository the repository in which the commit should be located.
+     * @return a Commit object representing the newly created commit.
+     * @throws VCS.BadRepoException if the repository is corrupt.
+     * @throws VCS.BadPositionException if the head is not in the end of
+     * the current branch.
+     */
+    protected static Commit create(@Nonnull String message,
+                                   @Nonnull Repository repository)
             throws VCS.BadRepoException, VCS.BadPositionException {
-        Commit commit = new Commit(message, repo);
-        repo.getCurBranch().addCommit(commit);
-        repo.setCurrentCommit(commit);
-        repo.updateCommitCounter(commit.number + 1);
+        Commit commit = new Commit(message, repository);
+        repository.getCurBranch().addCommit(commit);
+        repository.setCurrentCommit(commit);
+        repository.updateCommitCounter(commit.number + 1);
         return commit;
     }
 
+    /**
+     * Reads an already existing commit from the repository.
+     * @param number the number of commit to be read.
+     * @param repository the repository in which the commit is located.
+     * @return a Commit object representing the Commit.
+     * @throws VCS.NoSuchCommitException if a commit with the given number
+     * does not exist.
+     * @throws VCS.BadRepoException if the repository data folder is corrupt.
+     */
     protected static Commit read(@Nonnull Integer number,
                                  @Nonnull Repository repository)
             throws VCS.NoSuchCommitException, VCS.BadRepoException {

@@ -71,8 +71,7 @@ public class VCS {
     public static void createBranch(@Nonnull String branchName)
             throws BadRepoException, BranchAlreadyExistsException {
         Repository repository = Repository.getExisting();
-        repository.setCurrentBranch(Branch.create(branchName,
-                repository.getCurrentCommitNumber(), repository));
+        repository.setCurrentBranch(Branch.create(branchName, repository));
     }
 
     /**
