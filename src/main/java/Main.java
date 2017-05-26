@@ -365,13 +365,17 @@ public class Main {
                             help.exec(args);
                         }
                     }
+                } else {
+                    help.exec(args);
                 }
             }
 
             @Override
             protected String getDesc() {
-                return "branch create <name> - creates a branch with provided name\n" +
-                        "branch delete <name> - deletes specified branch";
+                return "branch create <name> - creates a branch with " +
+                        "provided name\n" +
+                        "branch delete <name> - deletes specified branch\n" +
+                        "branch list - lists all existing branches";
             }
         },
 
