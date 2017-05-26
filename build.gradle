@@ -1,0 +1,25 @@
+group 'ru.spbau.gusev.vcs'
+
+apply plugin: 'java'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.11'
+    testCompile group: 'org.mockito', name: 'mockito-core', version: '2.7.21'
+    compile group: 'com.google.code.findbugs', name: 'jsr305', version: '3.0.1'
+}
+
+jar {
+    manifest {
+        attributes(
+                'Main-Class': 'Main'
+        )
+    }
+}
+
+test {
+    forkEvery = 1
+}
