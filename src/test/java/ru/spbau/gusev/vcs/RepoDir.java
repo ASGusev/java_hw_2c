@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class RepoMock implements AutoCloseable {
+public class RepoDir implements AutoCloseable {
     protected static final String ROOT = ".vcs";
     protected static final String BRANCHES = "branches";
     protected static final String MASTER = "master";
@@ -26,7 +26,7 @@ public class RepoMock implements AutoCloseable {
     protected static final String USERNAME = "usr";
     protected static final String STAGE = "stage";
 
-    public RepoMock() throws IOException {
+    public RepoDir() throws IOException {
         Path repoRoot = Paths.get(ROOT);
 
         Files.createDirectory(repoRoot);

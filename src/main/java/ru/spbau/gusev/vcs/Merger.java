@@ -19,9 +19,10 @@ public abstract class Merger {
      * branch.
      */
     @Nonnull
-    protected static Commit merge(@Nonnull Branch branchToMerge) throws
+    protected static Commit merge(Repository repository,
+                                  @Nonnull Branch branchToMerge) throws
             VCS.BadRepoException, VCS.BadPositionException {
-        Commit curCommit = Repository.getCurrentCommit();
+        Commit curCommit = repository.getCurrentCommit();
         Commit commitToMerge = branchToMerge.getHead();
 
         List<Commit> curCommitPedigree = curCommit.getPedigree();
@@ -61,15 +62,17 @@ public abstract class Merger {
             }
         });
 
-        StagingZone stagingZone = Repository.getStagingZone();
+        StagingZone stagingZone = repository.getStagingZone();
         stagingZone.wipe();
         resFiles.forEach((path, desc) -> stagingZone.add(desc));
 
-        Commit mergedCommit = Commit.create("Branch " + branchToMerge.getName() + " merged.");
-        WorkingDirectory workingDirectory = Repository.getWorkingDirectory();
+        Commit mergedCommit = Commit.create(
+                "Branch " + branchToMerge.getName() + " merged.",
+                repository);
+        WorkingDirectory workingDirectory = repository.getWorkingDirectory();
         curCommit.removeFrom(workingDirectory);
         mergedCommit.checkout(workingDirectory, stagingZone);
-        Repository.setCurrentCommit(mergedCommit);
+        repository.setCurrentCommit(mergedCommit);
         return mergedCommit;
     }
 }

@@ -26,11 +26,24 @@ public class Repository {
     private static final String COMMITS_FILES_STORAGE = "commits_files";
     private static final String COMMITS_FILES_LIST = "commits_files_list";
 
-    private static StagingZone stage;
-    private static WorkingDirectory workingDirectory;
-    private static IntersectedFolderStorage commitStorage;
+    private final StagingZone stage;
+    private final WorkingDirectory workingDirectory;
+    private final IntersectedFolderStorage commitStorage;
 
-    private Repository(){}
+    private Repository() {
+        try {
+            stage = new StagingZone(Paths.get(REPO_DIR_NAME, STAGE_DIR),
+                    Paths.get(REPO_DIR_NAME, STAGE_LIST));
+        } catch (VCS.NoSuchFileException e) {
+            throw new IllegalStateException(e);
+        }
+
+        workingDirectory = new WorkingDirectory(Paths.get("."));
+
+        commitStorage = new IntersectedFolderStorage(
+                Paths.get(REPO_DIR_NAME, COMMITS_FILES_STORAGE),
+                Paths.get(REPO_DIR_NAME, COMMITS_FILES_LIST));
+    }
 
     /**
      * Initialises a repository in the current directory. A folder with all the
@@ -62,7 +75,9 @@ public class Repository {
             //Creating stage directory
             Files.createDirectory(Paths.get(REPO_DIR_NAME, STAGE_DIR));
             Files.createFile(Paths.get(REPO_DIR_NAME, STAGE_LIST));
-            getStagingZone().wipe();
+
+            Repository repo = new Repository();
+            repo.getStagingZone().wipe();
 
             //Setting up position tracking
             Files.write(Paths.get(REPO_DIR_NAME, POSITION_FILENAME),
@@ -75,10 +90,11 @@ public class Repository {
             //Preparing initial commit
             Files.createDirectory(Paths.get(REPO_DIR_NAME, COMMITS_DIR_NAME));
             try {
-                Commit.create("Initial commit.");
+                Commit.create("Initial commit.", repo);
             } catch (VCS.BadPositionException e) {
                 throw new VCS.BadRepoException();
             }
+            return repo;
         } catch (IOException | VCS.BadRepoException e) {
             try {
                 HashedDirectory.deleteDir(Paths.get(REPO_DIR_NAME));
@@ -87,10 +103,9 @@ public class Repository {
             }
             throw new VCS.FileSystemError(e);
         }
-        return new Repository();
     }
 
-    protected Repository get() {
+    protected static Repository getExisting() {
         if (!Files.isDirectory(Paths.get(REPO_DIR_NAME))) {
             throw new IllegalStateException("No repository found.");
         }
@@ -102,7 +117,7 @@ public class Repository {
      * @return the number of commits in the repository.
      * @throws VCS.BadRepoException if the repository folder is corrupt.
      */
-    protected static int getCommitsNumber() throws VCS.BadRepoException {
+    protected int getCommitsNumber() throws VCS.BadRepoException {
         List<String> lines;
         int commitsNumber;
         try {
@@ -127,7 +142,7 @@ public class Repository {
      * @throws VCS.BadRepoException if the repository folder is corrupt.
      */
     @Nonnull
-    protected static Branch getCurBranch() throws VCS.BadRepoException {
+    protected Branch getCurBranch() throws VCS.BadRepoException {
         String curBranchName;
         Path posFilePath = Paths.get(REPO_DIR_NAME, POSITION_FILENAME);
         if (Files.notExists(posFilePath)) {
@@ -140,7 +155,7 @@ public class Repository {
             throw new VCS.FileSystemError();
         }
         try {
-            return Branch.getByName(curBranchName);
+            return Branch.getByName(curBranchName, this);
         } catch (VCS.NoSuchBranchException e) {
             throw new VCS.BadRepoException();
         }
@@ -152,7 +167,7 @@ public class Repository {
      * @throws VCS.BadRepoException if the repository folder is corrupt.
      */
     @Nonnull
-    protected static String getUserName() throws VCS.BadRepoException {
+    protected String getUserName() throws VCS.BadRepoException {
         String username;
         try {
             if (Files.notExists(Paths.get(REPO_DIR_NAME, USERNAME_FILE))) {
@@ -173,7 +188,7 @@ public class Repository {
      * @param name new user name.
      * @throws VCS.BadRepoException if the repository folder is corrupt.
      */
-    protected static void setUserName(@Nonnull String name) throws VCS.BadRepoException {
+    protected void setUserName(@Nonnull String name) throws VCS.BadRepoException {
         if (!Files.exists(Paths.get(REPO_DIR_NAME, USERNAME_FILE))) {
             throw new VCS.BadRepoException();
         }
@@ -195,7 +210,7 @@ public class Repository {
      * @throws VCS.BadRepoException if the repository folder is corrupt.
      */
     @Nonnull
-    protected static Integer getCurrentCommitNumber() throws VCS.BadRepoException {
+    protected Integer getCurrentCommitNumber() throws VCS.BadRepoException {
         int curCommit;
         Path posFilePath = Paths.get(REPO_DIR_NAME, POSITION_FILENAME);
         if (Files.notExists(posFilePath)) {
@@ -217,9 +232,9 @@ public class Repository {
      * @throws VCS.BadRepoException if the repository folder is corrupt.
      */
     @Nonnull
-    protected static Commit getCurrentCommit() throws VCS.BadRepoException {
+    protected Commit getCurrentCommit() throws VCS.BadRepoException {
         try {
-            return Commit.read(getCurrentCommitNumber());
+            return Commit.read(getCurrentCommitNumber() ,this);
         } catch (VCS.NoSuchCommitException e){
             throw new VCS.BadRepoException("Current commit not found.");
         }
@@ -229,7 +244,7 @@ public class Repository {
      * Updates the current branch.
      * @param branch new current branch.
      */
-    protected static void setCurrentBranch(@Nonnull Branch branch) {
+    protected void setCurrentBranch(@Nonnull Branch branch) {
         Path posPath = Paths.get(REPO_DIR_NAME, POSITION_FILENAME);
         try {
             List<String> pos = Files.readAllLines(posPath);
@@ -244,7 +259,7 @@ public class Repository {
      * @param commit the new current commit.
      * @throws VCS.BadRepoException if the repository folder is corrupt.
      */
-    protected static void setCurrentCommit(@Nonnull Commit commit) throws VCS.BadRepoException {
+    protected void setCurrentCommit(@Nonnull Commit commit) throws VCS.BadRepoException {
         Path posPath = Paths.get(REPO_DIR_NAME, POSITION_FILENAME);
         if (Files.notExists(posPath)) {
             throw new VCS.BadRepoException("Position file not found.");
@@ -262,7 +277,7 @@ public class Repository {
      * @param val new commit counter value.
      * @throws VCS.BadRepoException if the repository folder is corrupt.
      */
-    protected static void updateCommitCounter(@Nonnull Integer val) throws VCS.BadRepoException {
+    protected void updateCommitCounter(@Nonnull Integer val) throws VCS.BadRepoException {
         Path counterPath = Paths.get(REPO_DIR_NAME, COMMITS_COUNTER_FILENAME);
         if (Files.notExists(counterPath)) {
             throw new VCS.BadRepoException("Commits counter file not found.");
@@ -281,12 +296,12 @@ public class Repository {
      * @throws VCS.BadRepoException if the repository folder is corrupt.
      * @throws VCS.NoSuchCommitException if the requested commit does not exist.
      */
-    protected static void checkoutCommit(@Nonnull Integer commitID) throws
+    protected void checkoutCommit(@Nonnull Integer commitID) throws
             VCS.BadRepoException, VCS.NoSuchCommitException {
-        Commit curCommit = Repository.getCurrentCommit();
+        Commit curCommit = getCurrentCommit();
         curCommit.removeFrom(getWorkingDirectory());
         getStagingZone().wipe();
-        Commit newCommit = Commit.read(commitID);
+        Commit newCommit = Commit.read(commitID, this);
         newCommit.checkout(getWorkingDirectory(), getStagingZone());
         setCurrentCommit(newCommit);
     }
@@ -296,15 +311,7 @@ public class Repository {
      * @return a StagingZone object for this repository.
      */
     @Nonnull
-    protected static StagingZone getStagingZone() throws VCS.BadRepoException {
-         if (stage == null) {
-             try {
-                 stage = new StagingZone(Paths.get(REPO_DIR_NAME, STAGE_DIR),
-                         Paths.get(REPO_DIR_NAME, STAGE_LIST));
-             } catch (VCS.NoSuchFileException e) {
-                 throw new VCS.BadRepoException(e.getMessage());
-             }
-         }
+    protected StagingZone getStagingZone() throws VCS.BadRepoException {
          return stage;
     }
 
@@ -314,10 +321,7 @@ public class Repository {
      * directory.
      */
     @Nonnull
-    protected static WorkingDirectory getWorkingDirectory() {
-        if (workingDirectory == null) {
-            workingDirectory = new WorkingDirectory(Paths.get("."));
-        }
+    protected WorkingDirectory getWorkingDirectory() {
         return workingDirectory;
     }
 
@@ -327,7 +331,7 @@ public class Repository {
      * @throws VCS.BadRepoException if the repository is corrupt.
      */
     @Nonnull
-    protected static List<Branch> getBranches() throws VCS.BadRepoException {
+    protected List<Branch> getBranches() throws VCS.BadRepoException {
         Path branchesDir = Paths.get(REPO_DIR_NAME, BRANCHES_DIR_NAME);
         if (!Files.isDirectory(branchesDir)) {
             throw new VCS.BadRepoException("Branches dir not found");
@@ -338,7 +342,7 @@ public class Repository {
                     .map(line -> {
                         try {
                             String branchName = branchesDir.relativize(line).toString();
-                            return Branch.getByName(branchName);
+                            return Branch.getByName(branchName, this);
                         } catch (VCS.NoSuchBranchException e) {
                             throw new Error();
                         }
@@ -356,12 +360,7 @@ public class Repository {
      * @return
      */
     @Nonnull
-    protected static IntersectedFolderStorage getCommitStorage() {
-        if (commitStorage == null) {
-            commitStorage = new IntersectedFolderStorage(
-                    Paths.get(REPO_DIR_NAME, COMMITS_FILES_STORAGE),
-                    Paths.get(REPO_DIR_NAME, COMMITS_FILES_LIST));
-        }
+    protected IntersectedFolderStorage getCommitStorage() {
         return commitStorage;
     }
 
@@ -370,7 +369,7 @@ public class Repository {
      * @return a list containing names of all branches.
      */
     @Nonnull
-    protected static List<String> getBranchNames() {
+    protected List<String> getBranchNames() {
         try {
             return Files.list(Paths.get(REPO_DIR_NAME, BRANCHES_DIR_NAME))
                     .map(path -> path.getName(path.getNameCount() - 1))

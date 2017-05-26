@@ -27,11 +27,9 @@ public class Commit {
     private final Integer father;
     private final Path rootDir;
     private final IntersectedFolder contentFolder;
+    private final Repository repository;
 
-    private Commit(@Nonnull Integer number, @Nonnull Branch branch,
-                     @Nonnull String author, @Nonnull String message,
-                     @Nonnull IntersectedFolderStorage storage,
-                     @Nonnull StagingZone stagingZone)
+    private Commit(@Nonnull String message, @Nonnull Repository repository)
             throws VCS.BadRepoException, VCS.BadPositionException {
         if (Files.notExists(Paths.get(Repository.REPO_DIR_NAME,
                 Repository.COMMITS_DIR_NAME))) {
@@ -41,16 +39,17 @@ public class Commit {
             throw new IllegalArgumentException("Empty commit message.");
         }
 
+        this.repository = repository;
+        this.number = repository.getCommitsNumber();
+        this.branch = repository.getCurBranch();
         rootDir = Paths.get(Repository.REPO_DIR_NAME,
                 Repository.COMMITS_DIR_NAME, number.toString());
         creationTime = System.currentTimeMillis();
         this.message = message;
         father = branch.getHeadNumber();
-        this.author = author;
-        this.branch = branch;
-        this.number = number;
+        this.author = repository.getUserName();
 
-        if (!branch.getHeadNumber().equals(father)) {
+        if (!repository.getCurrentCommitNumber().equals(father)) {
             throw new VCS.BadPositionException("Attempt to create a commit not in " +
                     "the head of a branch.");
         }
@@ -67,25 +66,19 @@ public class Commit {
             metadataWriter.write(message);
             metadataWriter.close();
 
-            contentFolder = new IntersectedFolder(storage, rootDir.resolve(COMMIT_FILES_LIST));
-            stagingZone.getFiles().forEach(contentFolder::add);
+            IntersectedFolderStorage storage = repository.getCommitStorage();
+            contentFolder = new IntersectedFolder(storage,
+                    rootDir.resolve(COMMIT_FILES_LIST));
+            repository.getStagingZone().getFiles().forEach(contentFolder::add);
             contentFolder.writeList();
-
-            branch.addCommit(this);
-            Repository.setCurrentCommit(this);
-            Repository.updateCommitCounter(number + 1);
         } catch (IOException | VCS.FileSystemError e) {
             try {
                 HashedDirectory.deleteDir(rootDir);
-            } catch (IOException e1) {}
+            } catch (IOException e1) {
+                e.addSuppressed(e1);
+            }
             throw new VCS.FileSystemError("Error writing new commit data.");
         }
-    }
-
-    protected static Commit create(@Nonnull String message) throws VCS.BadRepoException, VCS.BadPositionException {
-        return new Commit(Repository.getCommitsNumber(),
-                Repository.getCurBranch(), Repository.getUserName(), message,
-                Repository.getCommitStorage(), Repository.getStagingZone());
     }
 
     /**
@@ -95,9 +88,10 @@ public class Commit {
      * exist.
      * @throws VCS.BadRepoException if the repository data folder is corrupt.
      */
-    private Commit(@Nonnull Integer number) throws VCS.NoSuchCommitException,
-            VCS.BadRepoException {
+    private Commit(@Nonnull Integer number, @Nonnull Repository repository)
+            throws VCS.NoSuchCommitException, VCS.BadRepoException {
         this.number = number;
+        this.repository = repository;
         rootDir = Paths.get(Repository.REPO_DIR_NAME, Repository.COMMITS_DIR_NAME,
                 number.toString());
 
@@ -108,7 +102,7 @@ public class Commit {
         try (Scanner metadataScanner =
                      new Scanner(rootDir.resolve(COMMIT_METADATA_FILE))) {
             creationTime = metadataScanner.nextLong();
-            branch = Branch.getByName(metadataScanner.next());
+            branch = Branch.getByName(metadataScanner.next(), repository);
             author = metadataScanner.next();
             father = Integer.valueOf(metadataScanner.next());
 
@@ -121,7 +115,7 @@ public class Commit {
             }
             message = messageBuilder.toString();
 
-            contentFolder = new IntersectedFolder(Repository.getCommitStorage(),
+            contentFolder = new IntersectedFolder(repository.getCommitStorage(),
                     rootDir.resolve(COMMIT_FILES_LIST));
         } catch (IOException e) {
             throw new VCS.FileSystemError("Error reading commit data.");
@@ -130,9 +124,19 @@ public class Commit {
         }
     }
 
-    protected static Commit read(@Nonnull Integer number)
+    protected static Commit create(@Nonnull String message, Repository repo)
+            throws VCS.BadRepoException, VCS.BadPositionException {
+        Commit commit = new Commit(message, repo);
+        repo.getCurBranch().addCommit(commit);
+        repo.setCurrentCommit(commit);
+        repo.updateCommitCounter(commit.number + 1);
+        return commit;
+    }
+
+    protected static Commit read(@Nonnull Integer number,
+                                 @Nonnull Repository repository)
             throws VCS.NoSuchCommitException, VCS.BadRepoException {
-        return new Commit(number);
+        return new Commit(number, repository);
     }
 
     /**
@@ -189,7 +193,7 @@ public class Commit {
     @Nonnull
     protected Commit getFather() throws VCS.BadRepoException {
         try {
-            return Commit.read(father);
+            return Commit.read(father, repository);
         } catch (VCS.NoSuchCommitException e) {
             throw new VCS.BadRepoException("Error reading commit's father.");
         }
@@ -296,8 +300,7 @@ public class Commit {
      * @return a List with all removed files.
      */
     @Nonnull
-    protected List<String> getRemovedFiles() throws VCS.BadRepoException {
-        final StagingZone stagingZone = Repository.getStagingZone();
+    protected List<String> getRemovedFiles(StagingZone stagingZone) throws VCS.BadRepoException {
         return contentFolder.getFiles()
                 .filter(file -> !stagingZone.contains(file.getName()))
                 .map(TrackedFile::getName)

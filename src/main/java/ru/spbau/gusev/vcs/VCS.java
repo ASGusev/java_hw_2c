@@ -1,7 +1,6 @@
 package ru.spbau.gusev.vcs;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
 import java.nio.file.*;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -27,7 +26,7 @@ public class VCS {
      * not in a correct condition.
      */
     public static void setUserName(@Nonnull String name) throws BadRepoException {
-        Repository.setUserName(name);
+        Repository.getExisting().setUserName(name);
     }
 
     /**
@@ -41,10 +40,11 @@ public class VCS {
      */
     public static void commit(@Nonnull String message) throws BadRepoException,
             BadPositionException, NothingToCommitException {
+        Repository repository = Repository.getExisting();
         if (getStaged().isEmpty()) {
             throw new NothingToCommitException();
         }
-        Repository.setCurrentCommit(Commit.create(message));
+        repository.setCurrentCommit(Commit.create(message, repository));
     }
 
     /**
@@ -56,8 +56,9 @@ public class VCS {
      * @throws NoSuchFileException if the given path does not lead to a file.
      */
     public static void addFile(@Nonnull String path) throws BadRepoException, NoSuchFileException {
-        HashedFile file = Repository.getWorkingDirectory().getHashedFile(path);
-        Repository.getStagingZone().add(file);
+        Repository repository = Repository.getExisting();
+        HashedFile file = repository.getWorkingDirectory().getHashedFile(path);
+        repository.getStagingZone().add(file);
     }
 
     /**
@@ -67,10 +68,11 @@ public class VCS {
      * not in a correct condition.
      * @throws BranchAlreadyExistsException if a branch with this name already exists.
      */
-    public static void createBranch(@Nonnull String branchName) throws BadRepoException,
-            BranchAlreadyExistsException {
-        Repository.setCurrentBranch(Branch.create(branchName,
-                Repository.getCurrentCommitNumber()));
+    public static void createBranch(@Nonnull String branchName)
+            throws BadRepoException, BranchAlreadyExistsException {
+        Repository repository = Repository.getExisting();
+        repository.setCurrentBranch(Branch.create(branchName,
+                repository.getCurrentCommitNumber(), repository));
     }
 
     /**
@@ -82,9 +84,10 @@ public class VCS {
      */
     public static void deleteBranch(@Nonnull String branchName) throws BadRepoException,
             NoSuchBranchException, BadPositionException {
-        Branch branchToDelete = Branch.getByName(branchName);
+        Repository repository = Repository.getExisting();
+        Branch branchToDelete = Branch.getByName(branchName, repository);
         if (!branchToDelete.getName().equals(Repository.DEFAULT_BRANCH) &&
-                branchToDelete.equals(Repository.getCurBranch())) {
+                branchToDelete.equals(repository.getCurBranch())) {
             branchToDelete.delete();
         }
     }
@@ -99,7 +102,7 @@ public class VCS {
     @Nonnull
     public static List<CommitDescription> getLog() throws BadRepoException,
             NoSuchBranchException {
-        Branch curBranch = Repository.getCurBranch();
+        Branch curBranch = Repository.getExisting().getCurBranch();
         return curBranch.getLog();
     }
 
@@ -114,7 +117,8 @@ public class VCS {
      */
     public static void checkoutCommit(int commitID) throws BadRepoException,
             NoSuchCommitException {
-        Repository.checkoutCommit(commitID);
+        Repository repository = Repository.getExisting();
+        repository.checkoutCommit(commitID);
     }
 
     /**
@@ -127,10 +131,11 @@ public class VCS {
      */
     public static void checkoutBranch(@Nonnull String branchName) throws BadRepoException,
             NoSuchBranchException {
-        Branch newBranch = Branch.getByName(branchName);
+        Repository repository = Repository.getExisting();
+        Branch newBranch = Branch.getByName(branchName, repository);
         try {
-            Repository.checkoutCommit(newBranch.getHeadNumber());
-            Repository.setCurrentBranch(newBranch);
+            repository.checkoutCommit(newBranch.getHeadNumber());
+            repository.setCurrentBranch(newBranch);
         } catch (NoSuchCommitException e) {
             throw new BadRepoException("Branch's head commit not found.");
         }
@@ -147,7 +152,8 @@ public class VCS {
      */
     public static void merge(@Nonnull String branchName) throws BadPositionException,
             BadRepoException, NoSuchBranchException {
-        Merger.merge(Branch.getByName(branchName));
+        Repository repo = Repository.getExisting();
+        Merger.merge(repo, Branch.getByName(branchName, repo));
     }
 
     /**
@@ -159,11 +165,12 @@ public class VCS {
     public static void remove(@Nonnull String filename) throws NoSuchFileException,
             BadRepoException {
         Path filePath = Paths.get(filename);
+        Repository repository = Repository.getExisting();
 
-        if (!Repository.getStagingZone().removeFile(filePath)) {
+        if (!repository.getStagingZone().removeFile(filePath)) {
             throw new NoSuchFileException();
         }
-        Repository.getWorkingDirectory().delete(filePath);
+        repository.getWorkingDirectory().delete(filePath);
     }
 
     /**
@@ -172,9 +179,10 @@ public class VCS {
      */
     public static void reset(@Nonnull String filename) throws BadRepoException,
             NoSuchFileException {
+        Repository repository = Repository.getExisting();
         Path filePath = Paths.get(filename);
-        Repository.getCurrentCommit().resetFile(filePath,
-                Repository.getWorkingDirectory(), Repository.getStagingZone());
+        repository.getCurrentCommit().resetFile(filePath,
+                repository.getWorkingDirectory(), repository.getStagingZone());
     }
 
     /**
@@ -182,8 +190,9 @@ public class VCS {
      * the working directory.
      */
     public static void clean() throws BadRepoException {
-        final StagingZone stagingZone = Repository.getStagingZone();
-        Repository.getWorkingDirectory().deleteIf(file -> !stagingZone.contains(file));
+        Repository repository = Repository.getExisting();
+        final StagingZone stagingZone = repository.getStagingZone();
+        repository.getWorkingDirectory().deleteIf(file -> !stagingZone.contains(file));
     }
 
     /**
@@ -194,8 +203,9 @@ public class VCS {
      */
     @Nonnull
     public static List<String> getStaged() throws BadRepoException {
-        Commit currentCommit = Repository.getCurrentCommit();
-        return Repository.getStagingZone().getFiles()
+        Repository repository = Repository.getExisting();
+        Commit currentCommit = repository.getCurrentCommit();
+        return repository.getStagingZone().getFiles()
                 .filter(file -> {
                     TrackedFile fileInCommit = currentCommit.getFile(file.getName());
                     return  (fileInCommit == null || !file.equals(fileInCommit));
@@ -211,8 +221,9 @@ public class VCS {
      */
     @Nonnull
     public static List<String> getChanged() throws BadRepoException {
-        final StagingZone stagingZone = Repository.getStagingZone();
-        return Repository.getWorkingDirectory().getFiles()
+        Repository repository = Repository.getExisting();
+        final StagingZone stagingZone = repository.getStagingZone();
+        return repository.getWorkingDirectory().getFiles()
                 .filter(file -> {
                     HashedFile stagedFile = stagingZone.getHashedFile(file.getName());
                     return stagedFile != null && !file.equals(stagedFile);
@@ -228,8 +239,9 @@ public class VCS {
      */
     @Nonnull
     public static List<String> getCreated() throws BadRepoException {
-        final StagingZone stagingZone = Repository.getStagingZone();
-        return Repository.getWorkingDirectory().getFiles()
+        Repository repository = Repository.getExisting();
+        final StagingZone stagingZone = repository.getStagingZone();
+        return repository.getWorkingDirectory().getFiles()
                 .filter(file -> !stagingZone.contains(file.getName()))
                 .map(HashedFile::toString)
                 .collect(Collectors.toList());
@@ -241,7 +253,9 @@ public class VCS {
      */
     @Nonnull
     public static List<String> getRemoved() throws BadRepoException {
-        return Repository.getCurrentCommit().getRemovedFiles();
+        Repository repository = Repository.getExisting();
+        return repository.getCurrentCommit().getRemovedFiles(
+                repository.getStagingZone());
     }
 
     /**
@@ -251,7 +265,7 @@ public class VCS {
      */
     @Nonnull
     public static String getCurBranch() throws BadRepoException {
-        return Repository.getCurBranch().getName();
+        return Repository.getExisting().getCurBranch().getName();
     }
 
     /**
@@ -260,7 +274,7 @@ public class VCS {
      */
     @Nonnull
     public static List<String> getBranchNames() {
-        return Repository.getBranchNames();
+        return Repository.getExisting().getBranchNames();
     }
 
     /**

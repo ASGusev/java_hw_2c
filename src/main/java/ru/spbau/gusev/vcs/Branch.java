@@ -19,9 +19,12 @@ public class Branch {
 
     private final String name;
     private final Path commitsListPath;
+    private final Repository repository;
 
-    private Branch(@Nonnull String name) throws VCS.NoSuchBranchException {
+    private Branch(@Nonnull String name, @Nonnull Repository repository)
+            throws VCS.NoSuchBranchException {
         this.name = name;
+        this.repository = repository;
         commitsListPath = Paths.get(REPO_DIR, BRANCHES_DIR, name);
         if (Files.notExists(commitsListPath)) {
             throw new VCS.NoSuchBranchException();
@@ -37,7 +40,8 @@ public class Branch {
      * @throws VCS.BadRepoException if the repository folder is corrupt.
      */
     @Nonnull
-    protected static Branch create(@Nonnull String name, Integer parentCommit)
+    protected static Branch create(@Nonnull String name, Integer parentCommit,
+                                   @Nonnull Repository repository)
             throws VCS.BranchAlreadyExistsException, VCS.BadRepoException {
         if (name.isEmpty()) {
             throw new IllegalArgumentException("Empty branch name.");
@@ -57,7 +61,7 @@ public class Branch {
             throw new VCS.FileSystemError("Branch description creation error.");
         }
         try {
-            return new Branch(name);
+            return new Branch(name, repository);
         } catch (VCS.NoSuchBranchException e) {
             throw new VCS.BadRepoException("Branch creation failed.");
         }
@@ -65,13 +69,15 @@ public class Branch {
 
     /**
      * Reads an existing branch from the repo.
-     * @param name the name of the branch to get
+     * @param name the name of the branch to getExisting
      * @return an object representing the requested branch.
      * @throws VCS.NoSuchBranchException if the requested branch does not exist.
      */
     @Nonnull
-    protected static Branch getByName(@Nonnull String name) throws VCS.NoSuchBranchException {
-        return new Branch(name);
+    protected static Branch getByName(@Nonnull String name,
+                                      @Nonnull Repository repository)
+            throws VCS.NoSuchBranchException {
+        return new Branch(name, repository);
     }
 
     /**
@@ -127,7 +133,7 @@ public class Branch {
     @Nonnull
     protected Commit getHead() throws VCS.BadRepoException {
         try {
-            return Commit.read(getHeadNumber());
+            return Commit.read(getHeadNumber(), repository);
         } catch (VCS.NoSuchCommitException e) {
             throw new VCS.BadRepoException("Branch's head commit not found.");
         }
@@ -143,7 +149,8 @@ public class Branch {
         try {
             return Files.lines(commitsListPath).skip(1).map(number -> {
                 try {
-                    Commit commit = Commit.read(Integer.valueOf(number));
+                    Commit commit = Commit.read(Integer.valueOf(number),
+                            repository);
                     return new VCS.CommitDescription(commit);
                 } catch (VCS.NoSuchCommitException | VCS.BadRepoException e) {
                     throw new Error();
@@ -168,7 +175,7 @@ public class Branch {
         try {
             Files.lines(commitsListPath).forEach(commit -> {
                 try {
-                    Commit.read(Integer.valueOf(commit)).delete();
+                    Commit.read(Integer.valueOf(commit), repository).delete();
                 } catch (VCS.NoSuchCommitException | VCS.BadRepoException e) {
                     throw new Error();
                 }

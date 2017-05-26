@@ -45,9 +45,9 @@ public class RepositoryTest {
     @Test
     public void setUserTest() throws
             IOException, VCS.RepoAlreadyExistsException, VCS.BadRepoException {
-        try (RepoMock repo = new RepoMock()) {
+        try (RepoDir repo = new RepoDir()) {
             final String CUSTOM_USERNAME = "user2";
-            Repository.setUserName(CUSTOM_USERNAME);
+            Repository.getExisting().setUserName(CUSTOM_USERNAME);
             Assert.assertEquals(Files.readAllLines(
                     Paths.get(Repository.REPO_DIR_NAME, Repository.USERNAME_FILE)),
                     Collections.singletonList(CUSTOM_USERNAME));
@@ -65,10 +65,11 @@ public class RepositoryTest {
         final String CONTENT_2_1 = "2.1";
         final Path path1 = Paths.get(FILE_1);
         final Path path2 = Paths.get(FILE_2);
-        final Path storagePath = Paths.get(RepoMock.ROOT,
-                RepoMock.COMMITS_FILES);
+        final Path storagePath = Paths.get(RepoDir.ROOT,
+                RepoDir.COMMITS_FILES);
 
-        try (RepoMock repo = new RepoMock()) {
+        try (RepoDir repo = new RepoDir()) {
+            Repository repository = Repository.getExisting();
             MessageDigest digest = MessageDigest.getInstance("MD5");
             String hash_1_1 = new BigInteger(
                     digest.digest(CONTENT_1_1.getBytes())).toString();
@@ -85,10 +86,10 @@ public class RepositoryTest {
             List<String> files2 = Arrays.asList(FILE_1 + " " + hash_1_2,
                     FILE_2 + " " + hash_2_1);
 
-            repo.commit(1, RepoMock.MASTER, files1, 0, "msg", 0);
-            repo.commit(2, RepoMock.MASTER, files2, 0, "msg", 2);
+            repo.commit(1, RepoDir.MASTER, files1, 0, "msg", 0);
+            repo.commit(2, RepoDir.MASTER, files2, 0, "msg", 2);
 
-            Repository.checkoutCommit(1);
+            repository.checkoutCommit(1);
             Assert.assertTrue(Files.notExists(path2));
             List<String> file1Content = Files.readAllLines(path1);
             Assert.assertEquals(Collections.singletonList("1.1"), file1Content);

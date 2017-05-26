@@ -26,8 +26,8 @@ public class MergerTest {
         final String V1 = "v1";
         final String V2 = "v2";
 
-        try (RepoMock repo = new RepoMock()) {
-            Path storage = Paths.get(RepoMock.ROOT, RepoMock.COMMITS_FILES);
+        try (RepoDir repo = new RepoDir()) {
+            Path storage = Paths.get(RepoDir.ROOT, RepoDir.COMMITS_FILES);
 
             MessageDigest digest = MessageDigest.getInstance("MD5");
             String hashKeep = new BigInteger(digest.digest(
@@ -44,7 +44,7 @@ public class MergerTest {
             Files.write(storage.resolve(hashV1), V1.getBytes());
             Files.write(storage.resolve(hashV2), V2.getBytes());
 
-            Files.write(Paths.get(RepoMock.ROOT, RepoMock.COMMITS_FILES_LIST),
+            Files.write(Paths.get(RepoDir.ROOT, RepoDir.COMMITS_FILES_LIST),
                     (hashCreate + " 1\n" + hashKeep + " 1\n" + hashV1 + " 1\n" +
                     hashV2 + " 1\n").getBytes());
 
@@ -52,9 +52,9 @@ public class MergerTest {
                     FILE_TO_KEEP.toString() + " " + hashKeep,
                     FILE_TO_UPDATE.toString() + " " + hashV1);
 
-            repo.commit(1, RepoMock.MASTER, files1, 0, "m1", 0);
+            repo.commit(1, RepoDir.MASTER, files1, 0, "m1", 0);
 
-            Files.write(Paths.get(RepoMock.ROOT, RepoMock.BRANCHES,
+            Files.write(Paths.get(RepoDir.ROOT, RepoDir.BRANCHES,
                     "work"), "1\n".getBytes());
 
             List<String> files2 = Arrays.asList(
@@ -62,10 +62,11 @@ public class MergerTest {
                     FILE_TO_UPDATE.toString() + " " + hashV2);
             repo.commit(2, "work", files2, 0, "m2", 0);
 
-            Files.write(Paths.get(RepoMock.ROOT, RepoMock.POSITION),
+            Files.write(Paths.get(RepoDir.ROOT, RepoDir.POSITION),
                     "master\n1".getBytes());
-            Files.write(Paths.get(RepoMock.ROOT, RepoMock.COMMIT), "3".getBytes());
-            Merger.merge(Branch.getByName("work"));
+            Files.write(Paths.get(RepoDir.ROOT, RepoDir.COMMIT), "3".getBytes());
+            Merger.merge(Repository.getExisting(),
+                    Branch.getByName("work", Repository.getExisting()));
 
             Assert.assertEquals(Collections.singletonList(KEPT_CONTENT),
                     Files.readAllLines(FILE_TO_KEEP));
@@ -99,8 +100,8 @@ public class MergerTest {
         List<String> V3 = Collections.singletonList("v6");
 
         try {
-            Repository.create("usr");
-            StagingZone stagingZone = Repository.getStagingZone();
+            Repository repo = Repository.create("usr");
+            StagingZone stagingZone = repo.getStagingZone();
             Path curDir = Paths.get(".");
 
             Files.write(FILE_UPDATED_IN_MASTER, "v4".getBytes());
@@ -109,7 +110,7 @@ public class MergerTest {
             stagingZone.add(new HashedFile(FILE_UPDATED_IN_MASTER, curDir));
             stagingZone.add(new HashedFile(FILE_UPDATED_IN_WORK, curDir));
             stagingZone.add(new HashedFile(FILE_UPDATED_IN_BOTH, curDir));
-            Commit masterCommit1 = Commit.create("v4");
+            Commit masterCommit1 = Commit.create("v4" ,repo);
 
             Files.write(FILE_UPDATED_IN_MASTER, "v5".getBytes());
             Files.write(FILE_UPDATED_IN_BOTH, "v5".getBytes());
@@ -119,12 +120,12 @@ public class MergerTest {
             stagingZone.add(new HashedFile(FILE_UPDATED_IN_BOTH, curDir));
             stagingZone.add(new HashedFile(FILE_CREATED_IN_MASTER, curDir));
             stagingZone.add(new HashedFile(FILE_CREATED_IN_BOTH, curDir));
-            Commit masterCommit2 = Commit.create("v5");
+            Commit masterCommit2 = Commit.create("v5" ,repo);
 
-            Repository.checkoutCommit(masterCommit1.getNumber());
+            repo.checkoutCommit(masterCommit1.getNumber());
             Branch workBranch = Branch.create("work",
-                    masterCommit1.getNumber());
-            Repository.setCurrentBranch(workBranch);
+                    masterCommit1.getNumber(), repo);
+            repo.setCurrentBranch(workBranch);
             Files.write(FILE_UPDATED_IN_WORK, "v6".getBytes());
             Files.write(FILE_UPDATED_IN_BOTH, "v6".getBytes());
             Files.write(FILE_CREATED_IN_WORK, "v6".getBytes());
@@ -133,10 +134,10 @@ public class MergerTest {
             stagingZone.add(new HashedFile(FILE_UPDATED_IN_BOTH, curDir));
             stagingZone.add(new HashedFile(FILE_CREATED_IN_WORK, curDir));
             stagingZone.add(new HashedFile(FILE_CREATED_IN_BOTH, curDir));
-            Commit workCommit = Commit.create("v6");
+            Commit workCommit = Commit.create("v6", repo);
 
-            Repository.checkoutCommit(masterCommit2.getNumber());
-            Merger.merge(workBranch);
+            repo.checkoutCommit(masterCommit2.getNumber());
+            Merger.merge(repo, workBranch);
 
             Assert.assertEquals(V2, Files.readAllLines(FILE_CREATED_IN_MASTER));
             Assert.assertEquals(V2, Files.readAllLines(FILE_UPDATED_IN_MASTER));
