@@ -127,7 +127,11 @@ public class BrowsingWindow {
     }
 
     private EventHandler<MouseEvent> clickHandler = event -> {
-        FTPClient.DirEntry entry = dirEntries.get(listSelectionModel.getSelectedIndex());
+        int selectedIndex = listSelectionModel.getSelectedIndex();
+        if (selectedIndex < 0 || selectedIndex >= dirEntries.size()) {
+            return;
+        }
+        FTPClient.DirEntry entry = dirEntries.get(selectedIndex);
         if (entry.isDir()) {
             if (entry.getPath().equals(PARENT_FOLDER)) {
                 positions.pop();
