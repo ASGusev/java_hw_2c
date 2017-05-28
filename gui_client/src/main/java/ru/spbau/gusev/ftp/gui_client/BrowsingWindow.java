@@ -131,6 +131,7 @@ public class BrowsingWindow {
         if (selectedIndex < 0 || selectedIndex >= dirEntries.size()) {
             return;
         }
+        listSelectionModel.clearSelection();
         FTPClient.DirEntry entry = dirEntries.get(selectedIndex);
         if (entry.isDir()) {
             if (entry.getPath().equals(PARENT_FOLDER)) {
