@@ -1,0 +1,17 @@
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+    compile group: 'com.google.code.findbugs', name: 'jsr305', version: '3.0.1'
+}
+
+jar {
+    manifest {
+        attributes (
+                'Main-class': 'ru.spbau.gusev.ftp.server.ServerCLI'
+        )
+    }
+    from {
+        configurations.compile.collect {
+            it.isDirectory() ? it : zipTree(it)
+        }
+    }
+}

@@ -1,0 +1,37 @@
+apply plugin: 'java'
+
+subprojects {
+    apply plugin: 'java'
+    group = 'ru.spbau.gusev.ftp'
+    repositories {
+        mavenCentral()
+    }
+}
+
+project(':client') {
+    dependencies {
+        compile project(':commons')
+        compile group: 'com.google.code.findbugs', name: 'jsr305', version: '3.0.1'
+    }
+}
+
+project(':server') {
+    dependencies {
+        compile project(':commons')
+        compile group: 'com.google.code.findbugs', name: 'jsr305', version: '3.0.1'
+    }
+}
+
+project(':gui_client') {
+    dependencies {
+        compile project(':client')
+        compile group: 'com.google.code.findbugs', name: 'jsr305', version: '3.0.1'
+    }
+}
+
+project(':cli_client') {
+    dependencies {
+        compile project(':client')
+        compile group: 'com.google.code.findbugs', name: 'jsr305', version: '3.0.1'
+    }
+}

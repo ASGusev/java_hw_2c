@@ -1,0 +1,16 @@
+dependencies {
+    compile project(':client')
+}
+
+jar {
+    manifest {
+        attributes (
+                'Main-class': 'ru.spbau.gusev.ftp.gui_client.GUIClient'
+        )
+    }
+    from {
+        configurations.compile.collect {
+            it.isDirectory() ? it : zipTree(it)
+        }
+    }
+}
